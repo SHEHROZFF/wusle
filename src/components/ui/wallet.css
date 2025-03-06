@@ -1,0 +1,58 @@
+.wallet-adapter-button {
+  width: 100%; /* Full width */
+  padding: 12px 20px; /* Comfortable padding */
+  font-size: 16px; /* Readable font size */
+  font-weight: bold; /* Bold text for emphasis */
+  color: rgb(238, 233, 233);
+  background: linear-gradient(135deg, #6a11cb, #2575fc); /* Purple gradient */
+  border: none; /* Remove default border */
+  border-radius: 8px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: all 0.3s ease-in-out; /* Smooth transition */
+  /* animation: heartbeat 1.5s infinite ease-in-out; Heartbeat effect */
+
+  white-space: nowrap; /* Prevent text from wrapping */
+  overflow: hidden; /* Hide overflow if text is too long */
+  text-overflow: ellipsis; /* Show "..." if text overflows */
+}
+
+.wallet-adapter-button:hover {
+  color: white !important;
+  background: #aa63da !important; /* Reverse gradient */
+}
+
+.wallet-button:active {
+  transform: scale(0.98) !important; /* Pressed effect */
+}
+
+/* Keyframes for heartbeat animation */
+/* @keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.1);
+  }
+  50% {
+    transform: scale(1);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+} */

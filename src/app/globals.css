@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@100..900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  @apply font-nunito; /* Apply the custom font */
+}
+
+@layer base {
+  :root {
+    --background: 338, 37%, 87%;
+    --foreground: 338, 46%, 33%;
+    --card: 338, 46%, 93%;
+    --card-foreground: 338, 46%, 33%;
+    --popover: 338, 46%, 93%;
+    --popover-foreground: 338, 46%, 33%;
+    --primary: 338, 46%, 33%;
+    --primary-foreground: 338, 46%, 93%;
+    --secondary: 338, 46%, 84%;
+    --secondary-foreground: 338, 46%, 33%;
+    --muted: 338, 46%, 85%;
+    --muted-foreground: 338, 46%, 43%;
+    --accent: 338, 46%, 85%;
+    --accent-foreground: 338, 46%, 33%;
+    --destructive: 338, 46%, 60%;
+    --destructive-foreground: 338, 46%, 93%;
+    --border: 338, 46%, 89%;
+    --input: 338, 46%, 89%;
+    --ring: 338, 46%, 33%;
+    --chart-1: 338, 46%, 60%;
+    --chart-2: 338, 46%, 50%;
+    --chart-3: 338, 46%, 40%;
+    --chart-4: 338, 46%, 70%;
+    --chart-5: 338, 46%, 75%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}

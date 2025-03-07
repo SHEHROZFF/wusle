@@ -1,4 +1,3 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -7,7 +6,7 @@ import { compare } from "bcrypt";
 
 const prisma = new PrismaClient();
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
@@ -45,7 +44,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account.provider === "google") {
         try {
           // Upsert user
@@ -57,8 +56,7 @@ export const authOptions: NextAuthOptions = {
               data: {
                 email: user.email!,
                 name: user.name || "",
-                // password: undefined if optional, or:
-                // password: "google-oauth-user"
+                // password: optional for OAuth users
               },
             });
           } else {
@@ -101,6 +99,117 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+
+
+
+
+
+
+
+
+// // app/api/auth/[...nextauth]/route.ts
+// import NextAuth, { NextAuthOptions } from "next-auth";
+// import CredentialsProvider from "next-auth/providers/credentials";
+// import GoogleProvider from "next-auth/providers/google";
+// import { PrismaClient } from "@prisma/client";
+// import { compare } from "bcrypt";
+
+// const prisma = new PrismaClient();
+
+// export const authOptions: NextAuthOptions = {
+//   secret: process.env.NEXTAUTH_SECRET,
+//   session: { strategy: "jwt" },
+//   pages: {
+//     error: "/auth/error", // custom error page
+//   },
+//   providers: [
+//     GoogleProvider({
+//       clientId: process.env.GOOGLE_CLIENT_ID || "",
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+//     }),
+//     CredentialsProvider({
+//       name: "Credentials",
+//       credentials: {
+//         email: { label: "Email", type: "email" },
+//         password: { label: "Password", type: "password" },
+//       },
+//       async authorize(credentials) {
+//         if (!credentials || !credentials.email || !credentials.password) {
+//           throw new Error("Missing email or password");
+//         }
+//         // Find user
+//         const user = await prisma.user.findUnique({
+//           where: { email: credentials.email },
+//         });
+//         if (!user) {
+//           throw new Error("Invalid credentials");
+//         }
+//         // Check password
+//         const isValid = await compare(credentials.password, user.password!);
+//         if (!isValid) {
+//           throw new Error("Invalid credentials");
+//         }
+//         return { id: user.id, email: user.email, name: user.name };
+//       },
+//     }),
+//   ],
+//   callbacks: {
+//     async signIn({ user, account, profile }) {
+//       if (account.provider === "google") {
+//         try {
+//           // Upsert user
+//           const existingUser = await prisma.user.findUnique({
+//             where: { email: user.email! },
+//           });
+//           if (!existingUser) {
+//             await prisma.user.create({
+//               data: {
+//                 email: user.email!,
+//                 name: user.name || "",
+//                 // password: undefined if optional, or:
+//                 // password: "google-oauth-user"
+//               },
+//             });
+//           } else {
+//             // Optional: update name
+//             await prisma.user.update({
+//               where: { email: user.email! },
+//               data: {
+//                 name: user.name || existingUser.name,
+//               },
+//             });
+//           }
+//         } catch (err) {
+//           console.error("Google signIn error:", err);
+//           // redirect to error page
+//           return "/auth/error?error=" + encodeURIComponent(String(err));
+//         }
+//       }
+//       return true; // Continue with sign-in
+//     },
+//     async jwt({ token, user }) {
+//       if (user) {
+//         token.id = user.id;
+//         token.email = user.email;
+//         token.name = user.name;
+//       }
+//       return token;
+//     },
+//     async session({ session, token }) {
+//       if (token) {
+//         session.user = {
+//           id: token.id,
+//           email: token.email,
+//           name: token.name,
+//         };
+//       }
+//       return session;
+//     },
+//   },
+// };
+
+// const handler = NextAuth(authOptions);
+// export { handler as GET, handler as POST };
 
 
 

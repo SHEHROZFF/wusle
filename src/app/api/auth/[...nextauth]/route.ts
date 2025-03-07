@@ -45,7 +45,7 @@ const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account.provider === "google") {
+      if (account?.provider === "google") {
         try {
           // Upsert user
           const existingUser = await prisma.user.findUnique({

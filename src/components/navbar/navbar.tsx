@@ -1,14 +1,15 @@
-// components/Navbar.jsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { FaXTwitter, FaTelegram, FaInstagram } from "react-icons/fa6";
+import { FaXTwitter, FaInstagram } from "react-icons/fa6";
 import Logo from "../../assets/Images/logo.jpeg";
 
+import { useSession, signOut } from "next-auth/react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import LoginModal from "@/components/LoginModal";
 
 const links = [
   { href: "#home", label: "Home" },
@@ -20,6 +21,9 @@ const links = [
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { data: session } = useSession();
+  const [showLogin, setShowLogin] = useState(false);
+
   const half = Math.ceil(links.length / 2);
   const leftLinks = links.slice(0, half);
   const rightLinks = links.slice(half);
@@ -63,6 +67,11 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("resize", updateMobileView);
   }, []);
 
+  // Logout handler (optionally redirect to home after signOut)
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/" });
+  };
+
   return (
     <div className="flex justify-between items-center bg-transparent relative z-30 px-6 py-4">
       {/* Social Media Icons */}
@@ -75,14 +84,6 @@ const Navbar: React.FC = () => {
         >
           <FaXTwitter className="text-white text-3xl" />
         </a>
-        {/* <a
-          href="https://t.me"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="border-2 border-white rounded-full size-16 md:flex hidden items-center justify-center hover:text-black transition"
-        >
-          <FaTelegram className="text-white md:text-3xl text-2xl" />
-        </a> */}
         <a
           href="https://www.instagram.com/wusle_official/#"
           target="_blank"
@@ -94,6 +95,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {isMobile ? (
+        /* ------------------ MOBILE NAV ------------------ */
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <a
@@ -155,6 +157,7 @@ const Navbar: React.FC = () => {
           </AnimatePresence>
         </div>
       ) : (
+        /* ------------------ DESKTOP NAV ------------------ */
         <div
           className="relative items-center gap-8 hidden md:flex"
           onMouseEnter={() => setIsOpen(true)}
@@ -194,7 +197,11 @@ const Navbar: React.FC = () => {
             )}
           </AnimatePresence>
 
-          <div className="p-2 border-2 border-white rounded-full cursor-pointer  flex-shrink-0">
+          {/* Logo turned into a Link with consistent styling */}
+          <Link
+            href="/"
+            className="p-2 border-2 border-white rounded-full cursor-pointer flex-shrink-0 hover:text-black transition"
+          >
             <Image
               src={Logo}
               alt="Logo"
@@ -202,7 +209,7 @@ const Navbar: React.FC = () => {
               height={90}
               className="rounded-full"
             />
-          </div>
+          </Link>
 
           <AnimatePresence>
             {isOpen && (
@@ -227,7 +234,9 @@ const Navbar: React.FC = () => {
                       <Link
                         href={link.href}
                         className="text-white hover:text-gray-300 transition"
-                        download={link.href.endsWith(".pdf") ? true : undefined}
+                        download={
+                          link.href.endsWith(".pdf") ? true : undefined
+                        }
                       >
                         {link.label}
                       </Link>
@@ -240,29 +249,663 @@ const Navbar: React.FC = () => {
         </div>
       )}
 
-      {/* Wallet Button */}
-      <WalletMultiButton
-        style={{
-          fontSize: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: "bold",
-          color: "black",
-          background: "white",
-          border: "none",
-          borderRadius: "50px",
-          cursor: "pointer",
-          transition: "all 0.3s ease-in-out",
-          animation: "heartbeat 1s infinite ease-in-out",
-          padding: "10px 20px", // Adjust padding for better spacing
-          textAlign: "center",
-        }}
-      >
-        CONNECT WALLET
-      </WalletMultiButton>
+      {/* Condition: if user is logged in => show Connect Wallet & Logout, else show Login */}
+      {session?.user ? (
+        <div className="flex items-center gap-3">
+          <WalletMultiButton
+            style={{
+              fontSize: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              color: "black",
+              background: "white",
+              border: "none",
+              borderRadius: "50px",
+              cursor: "pointer",
+              transition: "all 0.3s ease-in-out",
+              animation: "heartbeat 1s infinite ease-in-out",
+              padding: "10px 20px",
+              textAlign: "center",
+            }}
+          >
+            CONNECT WALLET
+          </WalletMultiButton>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              fontSize: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              color: "black",
+              background: "white",
+              border: "none",
+              borderRadius: "50px",
+              cursor: "pointer",
+              transition: "all 0.3s ease-in-out",
+              animation: "heartbeat 1s infinite ease-in-out",
+              padding: "10px 20px",
+              textAlign: "center",
+            }}
+          >
+            LOGOUT
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowLogin(true)}
+          style={{
+            fontSize: "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: "bold",
+            color: "black",
+            background: "white",
+            border: "none",
+            borderRadius: "50px",
+            cursor: "pointer",
+            transition: "all 0.3s ease-in-out",
+            animation: "heartbeat 1s infinite ease-in-out",
+            padding: "10px 20px",
+            textAlign: "center",
+          }}
+        >
+          LOGIN
+        </button>
+      )}
+
+      {/* Our login modal */}
+      <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
     </div>
   );
 };
 
 export default Navbar;
+
+
+
+
+
+
+
+
+
+
+// "use client";
+// import { useState, useEffect } from "react";
+// import { motion, AnimatePresence } from "framer-motion";
+// import Link from "next/link";
+// import Image from "next/image";
+// import { FaXTwitter, FaInstagram } from "react-icons/fa6";
+// import Logo from "../../assets/Images/logo.jpeg";
+
+// import { useSession } from "next-auth/react";
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// import LoginModal from "@/components/LoginModal"; // same modal as above
+
+// const links = [
+//   { href: "#home", label: "Home" },
+//   { href: "#about", label: "About" },
+//   { href: "/whitepaper.pdf", label: "Whitepaper" },
+//   { href: "/Wusle_Audit.pdf", label: "Audit" },
+// ];
+
+// const Navbar: React.FC = () => {
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [isMobile, setIsMobile] = useState(false);
+//   const { data: session } = useSession();
+//   const [showLogin, setShowLogin] = useState(false);
+
+//   const half = Math.ceil(links.length / 2);
+//   const leftLinks = links.slice(0, half);
+//   const rightLinks = links.slice(half);
+
+//   const handleScroll = (e: React.MouseEvent, id: string) => {
+//     e.preventDefault();
+//     const element = document.querySelector(id);
+//     if (element) {
+//       element.scrollIntoView({ behavior: "smooth" });
+//       if (isMobile) setIsOpen(false);
+//     }
+//   };
+
+//   const menuVariants = {
+//     left: {
+//       hidden: { x: -50, opacity: 0 },
+//       visible: { x: 0, opacity: 1, transition: { staggerChildren: 0.1 } },
+//     },
+//     right: {
+//       hidden: { x: 50, opacity: 0 },
+//       visible: { x: 0, opacity: 1, transition: { staggerChildren: 0.1 } },
+//     },
+//   };
+
+//   const itemVariants = {
+//     hidden: { opacity: 0, y: -10 },
+//     visible: {
+//       opacity: 1,
+//       y: 0,
+//       transition: { type: "spring", stiffness: 120 },
+//     },
+//   };
+
+//   const updateMobileView = () => {
+//     setIsMobile(window.innerWidth < 768);
+//   };
+
+//   useEffect(() => {
+//     updateMobileView();
+//     window.addEventListener("resize", updateMobileView);
+//     return () => window.removeEventListener("resize", updateMobileView);
+//   }, []);
+
+//   return (
+//     <div className="flex justify-between items-center bg-transparent relative z-30 px-6 py-4">
+//       {/* Social Media Icons */}
+//       <div className="flex gap-6">
+//         <a
+//           href="https://x.com/wusle_official?s=21"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="border-2 md:flex hidden border-white rounded-full size-16 items-center justify-center hover:text-black transition"
+//         >
+//           <FaXTwitter className="text-white text-3xl" />
+//         </a>
+//         <a
+//           href="https://www.instagram.com/wusle_official/#"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="border-2 md:flex hidden border-white rounded-full size-16 items-center justify-center hover:text-black transition"
+//         >
+//           <FaInstagram className="text-white text-3xl" />
+//         </a>
+//       </div>
+
+//       {isMobile ? (
+//         <div className="flex items-center justify-between w-full">
+//           <div className="flex items-center gap-2">
+//             <a
+//               href="https://x.com/wusle_official?s=21"
+//               target="_blank"
+//               rel="noopener noreferrer"
+//               className="border-2 border-white rounded-full size-10 order-2 flex items-center justify-center hover:text-black transition"
+//             >
+//               <FaXTwitter className="text-white text-3xl" />
+//             </a>
+//             <button
+//               onClick={() => setIsOpen(!isOpen)}
+//               className="text-white text-xl focus:outline-none"
+//             >
+//               <div className="p-2 border-2 border-white rounded-full cursor-pointer">
+//                 <Image
+//                   src={Logo}
+//                   alt="Logo"
+//                   width={30}
+//                   height={30}
+//                   className="rounded-full"
+//                 />
+//               </div>
+//             </button>
+//           </div>
+//           <AnimatePresence>
+//             {isOpen && (
+//               <motion.div
+//                 className="absolute left-1/2 top-52 rounded-md transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-[80%] flex flex-col justify-center items-center gap-6 py-6"
+//                 initial={{ opacity: 0 }}
+//                 animate={{ opacity: 1 }}
+//                 exit={{ opacity: 0 }}
+//                 transition={{ duration: 0.5 }}
+//               >
+//                 {links.map((link) =>
+//                   link.href.startsWith("#") ? (
+//                     <a
+//                       key={link.href}
+//                       href={link.href}
+//                       onClick={(e) => handleScroll(e, link.href)}
+//                       className="text-2xl font-semibold hover:text-gray-300 transition"
+//                     >
+//                       {link.label}
+//                     </a>
+//                   ) : (
+//                     <Link
+//                       key={link.href}
+//                       href={link.href}
+//                       className="text-2xl font-semibold hover:text-gray-300 transition"
+//                       onClick={() => setIsOpen(false)}
+//                       download={link.href.endsWith(".pdf") ? true : undefined}
+//                     >
+//                       {link.label}
+//                     </Link>
+//                   )
+//                 )}
+//               </motion.div>
+//             )}
+//           </AnimatePresence>
+//         </div>
+//       ) : (
+//         <div
+//           className="relative items-center gap-8 hidden md:flex"
+//           onMouseEnter={() => setIsOpen(true)}
+//           onMouseLeave={() => setIsOpen(false)}
+//         >
+//           <AnimatePresence>
+//             {isOpen && (
+//               <motion.div
+//                 initial="hidden"
+//                 animate="visible"
+//                 exit="hidden"
+//                 variants={menuVariants.left}
+//                 className="absolute right-32 flex gap-8 text-xl font-semibold"
+//               >
+//                 {leftLinks.map((link) => (
+//                   <motion.div key={link.href} variants={itemVariants}>
+//                     {link.href.startsWith("#") ? (
+//                       <a
+//                         href={link.href}
+//                         onClick={(e) => handleScroll(e, link.href)}
+//                         className="text-white hover:text-gray-300 transition"
+//                       >
+//                         {link.label}
+//                       </a>
+//                     ) : (
+//                       <Link
+//                         href={link.href}
+//                         className="text-white hover:text-gray-300 transition"
+//                         download={
+//                           link.href.endsWith(".pdf") ? true : undefined
+//                         }
+//                       >
+//                         {link.label}
+//                       </Link>
+//                     )}
+//                   </motion.div>
+//                 ))}
+//               </motion.div>
+//             )}
+//           </AnimatePresence>
+
+//           <div className="p-2 border-2 border-white rounded-full cursor-pointer flex-shrink-0">
+//             <Image
+//               src={Logo}
+//               alt="Logo"
+//               width={90}
+//               height={90}
+//               className="rounded-full"
+//             />
+//           </div>
+
+//           <AnimatePresence>
+//             {isOpen && (
+//               <motion.div
+//                 initial="hidden"
+//                 animate="visible"
+//                 exit="hidden"
+//                 variants={menuVariants.right}
+//                 className="absolute left-32 flex gap-6 text-xl font-semibold"
+//               >
+//                 {rightLinks.map((link) => (
+//                   <motion.div key={link.href} variants={itemVariants}>
+//                     {link.href.startsWith("#") ? (
+//                       <a
+//                         href={link.href}
+//                         onClick={(e) => handleScroll(e, link.href)}
+//                         className="text-white hover:text-gray-300 transition"
+//                       >
+//                         {link.label}
+//                       </a>
+//                     ) : (
+//                       <Link
+//                         href={link.href}
+//                         className="text-white hover:text-gray-300 transition"
+//                         download={
+//                           link.href.endsWith(".pdf") ? true : undefined
+//                         }
+//                       >
+//                         {link.label}
+//                       </Link>
+//                     )}
+//                   </motion.div>
+//                 ))}
+//               </motion.div>
+//             )}
+//           </AnimatePresence>
+//         </div>
+//       )}
+
+//       {/* Condition: if user is logged in => show Connect Wallet, else show Login */}
+//       {session?.user ? (
+//         <WalletMultiButton
+//           style={{
+//             fontSize: "16px",
+//             display: "flex",
+//             alignItems: "center",
+//             justifyContent: "center",
+//             fontWeight: "bold",
+//             color: "black",
+//             background: "white",
+//             border: "none",
+//             borderRadius: "50px",
+//             cursor: "pointer",
+//             transition: "all 0.3s ease-in-out",
+//             animation: "heartbeat 1s infinite ease-in-out",
+//             padding: "10px 20px",
+//             textAlign: "center",
+//           }}
+//         >
+//           CONNECT WALLET
+//         </WalletMultiButton>
+//       ) : (
+//         <button
+//           onClick={() => setShowLogin(true)}
+//           style={{
+//             fontSize: "16px",
+//             display: "flex",
+//             alignItems: "center",
+//             justifyContent: "center",
+//             fontWeight: "bold",
+//             color: "black",
+//             background: "white",
+//             border: "none",
+//             borderRadius: "50px",
+//             cursor: "pointer",
+//             transition: "all 0.3s ease-in-out",
+//             animation: "heartbeat 1s infinite ease-in-out",
+//             padding: "10px 20px",
+//             textAlign: "center",
+//           }}
+//         >
+//           LOGIN
+//         </button>
+//       )}
+
+//       {/* Our login modal */}
+//       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
+//     </div>
+//   );
+// };
+
+// export default Navbar;
+
+
+
+
+
+
+
+
+
+
+
+// // components/Navbar.jsx
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { motion, AnimatePresence } from "framer-motion";
+// import Link from "next/link";
+// import Image from "next/image";
+// import { FaXTwitter, FaTelegram, FaInstagram } from "react-icons/fa6";
+// import Logo from "../../assets/Images/logo.jpeg";
+
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+
+// const links = [
+//   { href: "#home", label: "Home" },
+//   { href: "#about", label: "About" },
+//   { href: "/whitepaper.pdf", label: "Whitepaper" },
+//   { href: "/Wusle_Audit.pdf", label: "Audit" },
+// ];
+
+// const Navbar: React.FC = () => {
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [isMobile, setIsMobile] = useState(false);
+//   const half = Math.ceil(links.length / 2);
+//   const leftLinks = links.slice(0, half);
+//   const rightLinks = links.slice(half);
+
+//   const handleScroll = (e: React.MouseEvent, id: string) => {
+//     e.preventDefault();
+//     const element = document.querySelector(id);
+//     if (element) {
+//       element.scrollIntoView({ behavior: "smooth" });
+//       if (isMobile) setIsOpen(false);
+//     }
+//   };
+
+//   const menuVariants = {
+//     left: {
+//       hidden: { x: -50, opacity: 0 },
+//       visible: { x: 0, opacity: 1, transition: { staggerChildren: 0.1 } },
+//     },
+//     right: {
+//       hidden: { x: 50, opacity: 0 },
+//       visible: { x: 0, opacity: 1, transition: { staggerChildren: 0.1 } },
+//     },
+//   };
+
+//   const itemVariants = {
+//     hidden: { opacity: 0, y: -10 },
+//     visible: {
+//       opacity: 1,
+//       y: 0,
+//       transition: { type: "spring", stiffness: 120 },
+//     },
+//   };
+
+//   const updateMobileView = () => {
+//     setIsMobile(window.innerWidth < 768);
+//   };
+
+//   useEffect(() => {
+//     updateMobileView();
+//     window.addEventListener("resize", updateMobileView);
+//     return () => window.removeEventListener("resize", updateMobileView);
+//   }, []);
+
+//   return (
+//     <div className="flex justify-between items-center bg-transparent relative z-30 px-6 py-4">
+//       {/* Social Media Icons */}
+//       <div className="flex gap-6">
+//         <a
+//           href="https://x.com/wusle_official?s=21"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="border-2 md:flex hidden border-white rounded-full size-16 items-center justify-center hover:text-black transition"
+//         >
+//           <FaXTwitter className="text-white text-3xl" />
+//         </a>
+//         {/* <a
+//           href="https://t.me"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="border-2 border-white rounded-full size-16 md:flex hidden items-center justify-center hover:text-black transition"
+//         >
+//           <FaTelegram className="text-white md:text-3xl text-2xl" />
+//         </a> */}
+//         <a
+//           href="https://www.instagram.com/wusle_official/#"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="border-2 md:flex hidden border-white rounded-full size-16 items-center justify-center hover:text-black transition"
+//         >
+//           <FaInstagram className="text-white text-3xl" />
+//         </a>
+//       </div>
+
+//       {isMobile ? (
+//         <div className="flex items-center justify-between w-full">
+//           <div className="flex items-center gap-2">
+//             <a
+//               href="https://x.com/wusle_official?s=21"
+//               target="_blank"
+//               rel="noopener noreferrer"
+//               className="border-2 border-white rounded-full size-10 order-2 flex items-center justify-center hover:text-black transition"
+//             >
+//               <FaXTwitter className="text-white text-3xl" />
+//             </a>
+//             <button
+//               onClick={() => setIsOpen(!isOpen)}
+//               className="text-white text-xl focus:outline-none"
+//             >
+//               <div className="p-2 border-2 border-white rounded-full cursor-pointer">
+//                 <Image
+//                   src={Logo}
+//                   alt="Logo"
+//                   width={30}
+//                   height={30}
+//                   className="rounded-full"
+//                 />
+//               </div>
+//             </button>
+//           </div>
+//           <AnimatePresence>
+//             {isOpen && (
+//               <motion.div
+//                 className="absolute left-1/2 top-52 rounded-md transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-[80%] flex flex-col justify-center items-center gap-6 py-6"
+//                 initial={{ opacity: 0 }}
+//                 animate={{ opacity: 1 }}
+//                 exit={{ opacity: 0 }}
+//                 transition={{ duration: 0.5 }}
+//               >
+//                 {links.map((link) =>
+//                   link.href.startsWith("#") ? (
+//                     <a
+//                       key={link.href}
+//                       href={link.href}
+//                       onClick={(e) => handleScroll(e, link.href)}
+//                       className="text-2xl font-semibold hover:text-gray-300 transition"
+//                     >
+//                       {link.label}
+//                     </a>
+//                   ) : (
+//                     <Link
+//                       key={link.href}
+//                       href={link.href}
+//                       className="text-2xl font-semibold hover:text-gray-300 transition"
+//                       onClick={() => setIsOpen(false)}
+//                       download={link.href.endsWith(".pdf") ? true : undefined}
+//                     >
+//                       {link.label}
+//                     </Link>
+//                   )
+//                 )}
+//               </motion.div>
+//             )}
+//           </AnimatePresence>
+//         </div>
+//       ) : (
+//         <div
+//           className="relative items-center gap-8 hidden md:flex"
+//           onMouseEnter={() => setIsOpen(true)}
+//           onMouseLeave={() => setIsOpen(false)}
+//         >
+//           <AnimatePresence>
+//             {isOpen && (
+//               <motion.div
+//                 initial="hidden"
+//                 animate="visible"
+//                 exit="hidden"
+//                 variants={menuVariants.left}
+//                 className="absolute right-32 flex gap-8 text-xl font-semibold"
+//               >
+//                 {leftLinks.map((link) => (
+//                   <motion.div key={link.href} variants={itemVariants}>
+//                     {link.href.startsWith("#") ? (
+//                       <a
+//                         href={link.href}
+//                         onClick={(e) => handleScroll(e, link.href)}
+//                         className="text-white hover:text-gray-300 transition"
+//                       >
+//                         {link.label}
+//                       </a>
+//                     ) : (
+//                       <Link
+//                         href={link.href}
+//                         className="text-white hover:text-gray-300 transition"
+//                         download={link.href.endsWith(".pdf") ? true : undefined}
+//                       >
+//                         {link.label}
+//                       </Link>
+//                     )}
+//                   </motion.div>
+//                 ))}
+//               </motion.div>
+//             )}
+//           </AnimatePresence>
+
+//           <div className="p-2 border-2 border-white rounded-full cursor-pointer  flex-shrink-0">
+//             <Image
+//               src={Logo}
+//               alt="Logo"
+//               width={90}
+//               height={90}
+//               className="rounded-full"
+//             />
+//           </div>
+
+//           <AnimatePresence>
+//             {isOpen && (
+//               <motion.div
+//                 initial="hidden"
+//                 animate="visible"
+//                 exit="hidden"
+//                 variants={menuVariants.right}
+//                 className="absolute left-32 flex gap-6 text-xl font-semibold"
+//               >
+//                 {rightLinks.map((link) => (
+//                   <motion.div key={link.href} variants={itemVariants}>
+//                     {link.href.startsWith("#") ? (
+//                       <a
+//                         href={link.href}
+//                         onClick={(e) => handleScroll(e, link.href)}
+//                         className="text-white hover:text-gray-300 transition"
+//                       >
+//                         {link.label}
+//                       </a>
+//                     ) : (
+//                       <Link
+//                         href={link.href}
+//                         className="text-white hover:text-gray-300 transition"
+//                         download={link.href.endsWith(".pdf") ? true : undefined}
+//                       >
+//                         {link.label}
+//                       </Link>
+//                     )}
+//                   </motion.div>
+//                 ))}
+//               </motion.div>
+//             )}
+//           </AnimatePresence>
+//         </div>
+//       )}
+
+//       {/* Wallet Button */}
+//       <WalletMultiButton
+//         style={{
+//           fontSize: "16px",
+//           display: "flex",
+//           alignItems: "center",
+//           justifyContent: "center",
+//           fontWeight: "bold",
+//           color: "black",
+//           background: "white",
+//           border: "none",
+//           borderRadius: "50px",
+//           cursor: "pointer",
+//           transition: "all 0.3s ease-in-out",
+//           animation: "heartbeat 1s infinite ease-in-out",
+//           padding: "10px 20px", // Adjust padding for better spacing
+//           textAlign: "center",
+//         }}
+//       >
+//         CONNECT WALLET
+//       </WalletMultiButton>
+//     </div>
+//   );
+// };
+
+// export default Navbar;

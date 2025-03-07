@@ -1,0 +1,33 @@
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb+srv://bilalshehroz420:00000@cluster0.wru7job.mongodb.net/wusle?retryWrites=true&w=majority" 
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String?
+  name      String?
+  createdAt DateTime @default(now())
+
+  // For password reset
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+}
+
+
+model PresaleStage {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  stageNumber  Int
+  startTime    DateTime
+  endTime      DateTime
+  rate         Float
+  listingPrice Float
+  target       Float
+  raised       Float    @default(0)
+  createdAt    DateTime @default(now())
+}

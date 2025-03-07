@@ -1,21 +1,17 @@
-// pages/api/socketio.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-/** Return the current active or next upcoming stage from DB */
 async function getCurrentStage() {
   const now = new Date();
-  // Find a stage that's currently active
   const active = await prisma.presaleStage.findFirst({
     where: { startTime: { lte: now }, endTime: { gte: now } },
     orderBy: { stageNumber: "asc" },
   });
   if (active) return active;
 
-  // Or the next upcoming stage
   const upcoming = await prisma.presaleStage.findFirst({
     where: { startTime: { gt: now } },
     orderBy: { startTime: "asc" },
@@ -24,27 +20,34 @@ async function getCurrentStage() {
 }
 
 export default function SocketHandler(req: NextApiRequest, res: NextApiResponse) {
+  // Ensure res.socket is available
+  if (!res.socket) {
+    console.error("Socket not found on response");
+    res.end();
+    return;
+  }
+
+  // Type assertion to bypass TS error since res.socket doesn't have server in its type definition
+  const socketServer = res.socket as any;
+
   // Only initialize once
-  if (!res.socket.server.io) {
+  if (!socketServer.server?.io) {
     console.log("First use, starting Socket.io");
 
-    const io = new Server(res.socket.server, {
+    const io = new Server(socketServer.server, {
       path: "/api/socketio",
       cors: { origin: "*" },
     });
-    res.socket.server.io = io;
+    socketServer.server.io = io;
 
     io.on("connection", async (socket) => {
       console.log("Socket connected:", socket.id);
 
-      // Function to emit the presale info (all stages + current stage)
       async function emitPresaleInfo() {
-        // Grab all stages
         const allStages = await prisma.presaleStage.findMany({
           orderBy: { stageNumber: "asc" },
         });
 
-        // Find current or next stage
         const stage = await getCurrentStage();
         let currentStage = 0;
         let endsAt = new Date().toISOString();
@@ -58,23 +61,20 @@ export default function SocketHandler(req: NextApiRequest, res: NextApiResponse)
           listingPrice = stage.listingPrice;
         }
 
-        // Emit everything
         socket.emit("presaleInfo", {
-          stages: allStages,      // full array of stages
-          currentStage,           // e.g. 1,2,3...
+          stages: allStages,
+          currentStage,
           endsAt,
           wusleRate,
           listingPrice,
         });
       }
 
-      // Emit immediately
       await emitPresaleInfo();
 
-      // Then periodically update
       const interval = setInterval(async () => {
         await emitPresaleInfo();
-      }, 10_000); // e.g. every 10s
+      }, 10_000);
 
       socket.on("disconnect", () => {
         console.log("Socket disconnected:", socket.id);
@@ -87,6 +87,102 @@ export default function SocketHandler(req: NextApiRequest, res: NextApiResponse)
 
   res.end();
 }
+
+
+
+
+
+
+
+// // pages/api/socketio.ts
+// import { NextApiRequest, NextApiResponse } from "next";
+// import { Server } from "socket.io";
+// import { PrismaClient } from "@prisma/client";
+
+// const prisma = new PrismaClient();
+
+// /** Return the current active or next upcoming stage from DB */
+// async function getCurrentStage() {
+//   const now = new Date();
+//   // Find a stage that's currently active
+//   const active = await prisma.presaleStage.findFirst({
+//     where: { startTime: { lte: now }, endTime: { gte: now } },
+//     orderBy: { stageNumber: "asc" },
+//   });
+//   if (active) return active;
+
+//   // Or the next upcoming stage
+//   const upcoming = await prisma.presaleStage.findFirst({
+//     where: { startTime: { gt: now } },
+//     orderBy: { startTime: "asc" },
+//   });
+//   return upcoming || null;
+// }
+
+// export default function SocketHandler(req: NextApiRequest, res: NextApiResponse) {
+//   // Only initialize once
+//   if (!res.socket.server.io) {
+//     console.log("First use, starting Socket.io");
+
+//     const io = new Server(res.socket.server, {
+//       path: "/api/socketio",
+//       cors: { origin: "*" },
+//     });
+//     res.socket.server.io = io;
+
+//     io.on("connection", async (socket) => {
+//       console.log("Socket connected:", socket.id);
+
+//       // Function to emit the presale info (all stages + current stage)
+//       async function emitPresaleInfo() {
+//         // Grab all stages
+//         const allStages = await prisma.presaleStage.findMany({
+//           orderBy: { stageNumber: "asc" },
+//         });
+
+//         // Find current or next stage
+//         const stage = await getCurrentStage();
+//         let currentStage = 0;
+//         let endsAt = new Date().toISOString();
+//         let wusleRate = 0.0037;
+//         let listingPrice = 0.005;
+
+//         if (stage) {
+//           currentStage = stage.stageNumber;
+//           endsAt = stage.endTime.toISOString();
+//           wusleRate = stage.rate;
+//           listingPrice = stage.listingPrice;
+//         }
+
+//         // Emit everything
+//         socket.emit("presaleInfo", {
+//           stages: allStages,      // full array of stages
+//           currentStage,           // e.g. 1,2,3...
+//           endsAt,
+//           wusleRate,
+//           listingPrice,
+//         });
+//       }
+
+//       // Emit immediately
+//       await emitPresaleInfo();
+
+//       // Then periodically update
+//       const interval = setInterval(async () => {
+//         await emitPresaleInfo();
+//       }, 10_000); // e.g. every 10s
+
+//       socket.on("disconnect", () => {
+//         console.log("Socket disconnected:", socket.id);
+//         clearInterval(interval);
+//       });
+//     });
+//   } else {
+//     console.log("Socket.io already running");
+//   }
+
+//   res.end();
+// }
 
 
 

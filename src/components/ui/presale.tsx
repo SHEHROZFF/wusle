@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
 import Usdt from "../../assets/Images/usdt.png";
 import Sol from "../../assets/Images/sol.png";
@@ -24,6 +25,7 @@ import {
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 
+/* --------------- Types --------------- */
 interface StageData {
   stageNumber: number;
   target: number;
@@ -49,6 +51,18 @@ interface Countdown {
   seconds: number;
 }
 
+// Slip / receipt data from server
+interface SlipData {
+  id: string;
+  userId: string;
+  walletAddress: string;
+  currency: string;
+  amountPaid: number;
+  wuslePurchased: number;
+  redeemCode: string;
+  // possibly txSignature, isRedeemed, etc.
+}
+
 export default function PresaleInterface() {
   const { data: session } = useSession();
   const { publicKey, connected, sendTransaction } = useWallet();
@@ -56,6 +70,7 @@ export default function PresaleInterface() {
   // The presale data from /api/presale
   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
 
+  // Countdown, progress, user input
   const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [progress, setProgress] = useState<number>(0);
 
@@ -64,6 +79,10 @@ export default function PresaleInterface() {
   const [wusleAmount, setWusleAmount] = useState<number>(0);
 
   const [showLogin, setShowLogin] = useState(false);
+
+  // For receipt modal
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [slip, setSlip] = useState<SlipData | null>(null);
 
   // 1) Fetch presale data once (or poll every X seconds)
   useEffect(() => {
@@ -82,11 +101,8 @@ export default function PresaleInterface() {
     }
 
     fetchPresale();
-
-    // optional: poll every 30s
-    // const interval = setInterval(() => {
-    //   fetchPresale();
-    // }, 30000);
+    // optional poll
+    // const interval = setInterval(() => fetchPresale(), 30000);
     // return () => clearInterval(interval);
   }, []);
 
@@ -94,37 +110,33 @@ export default function PresaleInterface() {
   useEffect(() => {
     if (!presaleData) return;
     const { stages, currentStage } = presaleData;
-
     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+
     const active = stages.find((s) => s.stageNumber === currentStage);
     if (!active) {
       setProgress(0);
       return;
     }
 
-    // sum completed
     let sumCompleted = 0;
     for (const st of stages) {
-      if (st.stageNumber < currentStage) {
-        sumCompleted += st.target;
-      }
+      if (st.stageNumber < currentStage) sumCompleted += st.target;
     }
     const partial = active.raised;
     const totalRaisedSoFar = sumCompleted + partial;
 
-    const fraction = (totalRaisedSoFar / totalCap) * 100;
-    setProgress(Math.min(Math.max(fraction, 0), 100));
+    const frac = (totalRaisedSoFar / totalCap) * 100;
+    setProgress(Math.min(Math.max(frac, 0), 100));
   }, [presaleData]);
 
-  // 3) Local countdown to endsAt
+  // 3) Local countdown
   useEffect(() => {
     if (!presaleData) return;
-    let endsAt = new Date(presaleData.endsAt).getTime();
+    const endsAt = new Date(presaleData.endsAt).getTime();
 
     const timer = setInterval(() => {
       const now = Date.now();
       const diff = endsAt - now;
-
       if (diff <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       } else {
@@ -139,7 +151,7 @@ export default function PresaleInterface() {
     return () => clearInterval(timer);
   }, [presaleData]);
 
-  // 4) Recalculate WUSLE from "amount"
+  // 4) WUSLE calc
   useEffect(() => {
     if (!presaleData) return;
     const rate = presaleData.wusleRate || 0.0037;
@@ -147,21 +159,19 @@ export default function PresaleInterface() {
     setWusleAmount(isNaN(val) ? 0 : val);
   }, [amount, presaleData]);
 
-  // Markers for the progress bar
+  // Stage markers
   function getStageMarkers() {
     if (!presaleData) return [];
     const { stages } = presaleData;
     if (!stages.length) return [];
+    const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
 
-    let totalCap = stages.reduce((acc, s) => acc + s.target, 0);
     let cumulative = 0;
-    const markers = [];
-    for (const st of stages) {
+    return stages.map((st) => {
       cumulative += st.target;
-      let fraction = (cumulative / totalCap) * 100;
-      markers.push({ pct: fraction, label: `Stage ${st.stageNumber}` });
-    }
-    return markers;
+      const pct = (cumulative / totalCap) * 100;
+      return { pct, label: `Stage ${st.stageNumber}` };
+    });
   }
 
   // Summation for "WUSLE Sold" or "USDT raised" so far
@@ -173,9 +183,7 @@ export default function PresaleInterface() {
 
     let completed = 0;
     for (const st of stages) {
-      if (st.stageNumber < currentStage) {
-        completed += st.target;
-      }
+      if (st.stageNumber < currentStage) completed += st.target;
     }
     return completed + active.raised;
   }
@@ -183,12 +191,10 @@ export default function PresaleInterface() {
   // The buy slip function
   async function handleBuyNow() {
     try {
-      // 1) check auth
       if (!session?.user) {
         alert("You must be logged in.");
         return;
       }
-      // 2) check wallet
       if (!publicKey || !connected) {
         alert("Connect your wallet first!");
         return;
@@ -200,11 +206,11 @@ export default function PresaleInterface() {
         return;
       }
 
-      // possibly do SOL devnet transaction if selectedCurrency === "SOL"
+      // On-chain transaction if SOL
       let txSignature = "";
       if (selectedCurrency === "SOL") {
         const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-        const receiverAddress = "YOUR_DEVNET_PUBKEY_HERE"; // e.g. "Fc71Hw..."
+        const receiverAddress = "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G"; // e.g. "Fc71Hw..."
         const receiverPubkey = new PublicKey(receiverAddress);
 
         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
@@ -215,11 +221,10 @@ export default function PresaleInterface() {
             lamports,
           })
         );
-
         txSignature = await sendTransaction(transaction, connection);
-        console.log("Transaction signature:", txSignature);
+        console.log("Transaction sig:", txSignature);
 
-        // confirm transaction
+        // confirm
         const latestBlockHash = await connection.getLatestBlockhash();
         await connection.confirmTransaction({
           signature: txSignature,
@@ -228,11 +233,9 @@ export default function PresaleInterface() {
         });
         console.log("SOL devnet transaction confirmed!");
       } else {
-        // USDT path => skip on-chain
-        console.log("Simulating USDT purchase, no devnet transaction done.");
+        console.log("Simulating USDT purchase. No devnet transaction done.");
       }
 
-      // create slip via /api/slip/buy
       const res = await fetch("/api/slip/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -246,7 +249,9 @@ export default function PresaleInterface() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`Purchase successful!\nRedeem Code: ${data.slip.redeemCode}`);
+        // data.slip => slip object
+        setSlip(data.slip);
+        setShowReceipt(true);
       } else {
         alert(data.error || "Error creating slip");
       }
@@ -522,11 +527,120 @@ export default function PresaleInterface() {
 
       {/* The login modal */}
       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
+
+      {/* Our fancy slip receipt modal */}
+      <ReceiptModal
+        show={showReceipt}
+        slip={slip}
+        onClose={() => setShowReceipt(false)}
+      />
     </div>
   );
 }
 
+/* ---------- The "Teeth" receipt modal ---------- */
+function ReceiptModal({
+  show,
+  slip,
+  onClose,
+}: {
+  show: boolean;
+  slip: SlipData | null;
+  onClose: () => void;
+}) {
+  if (!show || !slip) return null;
 
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Click outside to close */}
+          <div className="absolute inset-0" onClick={onClose} />
+
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="
+              relative
+              p-6
+              w-full
+              max-w-md
+              bg-gradient-to-br from-[#4f0289]/40 to-[#9c23d5]/40
+              backdrop-blur-xl
+              border border-white/20 ring-1 ring-white/20
+              text-white
+              flex flex-col
+              shadow-2xl
+              [clip-path:polygon(
+                0% 0%,
+                100% 0%,
+                100% 90%,
+                90% 80%,
+                80% 90%,
+                70% 80%,
+                60% 90%,
+                50% 80%,
+                40% 90%,
+                30% 80%,
+                20% 90%,
+                10% 80%,
+                0% 90%
+              )]
+            "
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 text-white text-2xl hover:text-gray-300"
+            >
+              &times;
+            </button>
+
+            <h2 className="text-2xl font-extrabold text-center mb-4 uppercase">
+              Purchase Receipt
+            </h2>
+
+            <div className="text-sm flex flex-col gap-2">
+              <p>
+                <span className="font-bold">Slip ID:</span> {slip.id}
+              </p>
+              <p>
+                <span className="font-bold">Wallet:</span> {slip.walletAddress}
+              </p>
+              <p>
+                <span className="font-bold">Currency:</span> {slip.currency}
+              </p>
+              <p>
+                <span className="font-bold">Amount Paid:</span> {slip.amountPaid}
+              </p>
+              <p>
+                <span className="font-bold">WUSLE Purchased:</span>{" "}
+                {slip.wuslePurchased}
+              </p>
+              <div className="mt-2 p-2 bg-white/20 rounded-md">
+                <span className="font-bold">Redeem Code:</span>{" "}
+                <span className="font-mono text-purple-100">
+                  {slip.redeemCode}
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-4 text-center text-xs text-gray-300">
+              Keep this slip code safe to redeem your WUSLE tokens later!
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 
 

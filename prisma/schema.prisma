@@ -31,3 +31,17 @@ model PresaleStage {
   raised       Float    @default(0)
   createdAt    DateTime @default(now())
 }
+
+
+model Slip {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String
+  walletAddress    String
+  currency         String   // e.g. "USDT" or "SOL"
+  amountPaid       Float
+  wuslePurchased   Float    // how many WUSLE they bought
+  redeemCode       String   @unique
+  isRedeemed       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  redeemedAt       DateTime?
+}

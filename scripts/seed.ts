@@ -6,26 +6,37 @@ async function main() {
   // Clear existing stages
   await prisma.presaleStage.deleteMany();
 
-  // Base start date for stage 1
-  const baseStartDate = new Date("2025-03-15T00:00:00Z");
-  // Each stage lasts for 16 days (adjust as needed)
+  // Stage duration: 16 days (adjust as needed)
   const stageDurationDays = 16;
+  
+  // Current date
+  const now = new Date();
 
-  for (let i = 1; i <= 11; i++) {
-    // Calculate startTime and endTime for each stage
-    const startTime = new Date(baseStartDate);
+  // Base date for completed stages (set sufficiently in the past)
+  // For example, 50 days ago ensures that the first 3 stages have already ended.
+  const completedBaseDate = new Date(now.getTime() - 50 * 24 * 60 * 60 * 1000);
+  // Base date for upcoming stages (starts tomorrow)
+  const upcomingBaseDate = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);
+
+  // Total stages = 11
+  const totalStages = 11;
+  // Number of completed stages
+  const completedStages = 3;
+
+  // Create completed stages (stages 1 - 3)
+  for (let i = 1; i <= completedStages; i++) {
+    const startTime = new Date(completedBaseDate);
     startTime.setUTCDate(startTime.getUTCDate() + (i - 1) * stageDurationDays);
     
     const endTime = new Date(startTime);
-    // Subtract 1 day to get an end date that's within the 16-day period
     endTime.setUTCDate(endTime.getUTCDate() + stageDurationDays - 1);
 
-    // Sample data values; tweak as needed
+    // Sample calculations for stage data
     const rate = 0.0037 + (i - 1) * 0.0003;
     const listingPrice = 0.005;
-    const target = 4110000 + (i - 1) * 100000; // increasing target per stage
-    // For demonstration, only stage 1 has raised funds, others start at 0
-    const raised = i === 1 ? 2069177 : 0;
+    const target = 4110000 + (i - 1) * 100000;
+    // Completed stages: raised equals target
+    const raised = target;
 
     await prisma.presaleStage.create({
       data: {
@@ -40,7 +51,36 @@ async function main() {
     });
   }
 
-  console.log("Seeded 11 stages!");
+  // Create upcoming stages (stages 4 - 11)
+  for (let i = completedStages + 1; i <= totalStages; i++) {
+    // For upcoming stages, we use a different base date (starting tomorrow)
+    const stageIndex = i - completedStages - 1; // 0-indexed for upcoming stages
+    const startTime = new Date(upcomingBaseDate);
+    startTime.setUTCDate(startTime.getUTCDate() + stageIndex * stageDurationDays);
+
+    const endTime = new Date(startTime);
+    endTime.setUTCDate(endTime.getUTCDate() + stageDurationDays - 1);
+
+    const rate = 0.0037 + (i - 1) * 0.0003;
+    const listingPrice = 0.005;
+    const target = 4110000 + (i - 1) * 100000;
+    // Upcoming stages: no funds raised yet
+    const raised = 0;
+
+    await prisma.presaleStage.create({
+      data: {
+        stageNumber: i,
+        startTime,
+        endTime,
+        rate,
+        listingPrice,
+        target,
+        raised,
+      },
+    });
+  }
+
+  console.log("Seeded 11 stages: first 3 complete, 8 upcoming!");
 }
 
 main()

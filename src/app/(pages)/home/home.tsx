@@ -50,7 +50,7 @@ export default function Home() {
       />
 
       {/* Foreground content */}
-      <div className="overflow-x-hidden relative z-10 flex flex-col h-full px-4 text-center  md:mt-36 mt-36 md:mr-4 mr-0">
+      <div className="overflow-x-hidden relative z-10 flex flex-col h-full px-4 text-center  md:mt-36 mt-36 md:-mr-12 mr-0">
         <div className="flex flex-wrap items-center justify-center gap-4  md:mr-12 mr-0">
           <motion.h1
             className="text-7xl  tracking-widest font-black text-white/80 font-nunito md:text-8xl  uppercase animate__animated animate__fadeIn"

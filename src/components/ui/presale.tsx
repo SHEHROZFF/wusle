@@ -167,20 +167,47 @@ export default function PresaleInterface() {
   }, [amount, presaleData]);
 
   // Stage markers
+  // function getStageMarkers() {
+  //   if (!presaleData) return [];
+  //   const { stages } = presaleData;
+  //   if (!stages.length) return [];
+  //   const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+  
+  //   let cumulative = 0;
+  //   return stages.map((st) => {
+  //     // Place the marker at the start of this stage
+  //     const pct = (cumulative / totalCap) * 100;
+  
+  //     // Then add this stage’s target to move the cumulative forward
+  //     cumulative += st.target;
+  
+  //     return { pct, label: `${st.stageNumber}` };
+  //   });
+  // }
   function getStageMarkers() {
     if (!presaleData) return [];
-    const { stages } = presaleData;
+    const { stages, currentStage } = presaleData;
     if (!stages.length) return [];
     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
-
+    
     let cumulative = 0;
     return stages.map((st) => {
-      cumulative += st.target;
+      // Place the marker at the start of this stage
       const pct = (cumulative / totalCap) * 100;
-      return { pct, label: `${st.stageNumber}` };
+      cumulative += st.target;
+      // Determine status: completed if stage number is less than current,
+      // current if equal, upcoming if greater.
+      let status = "upcoming";
+      if (st.stageNumber < currentStage) {
+        status = "completed";
+      } else if (st.stageNumber === currentStage) {
+        status = "current";
+      }
+      return { pct, label: `${st.stageNumber}`, status };
     });
   }
-
+  
+  
   // Summation for "WUSLE Sold" or "USDT raised" so far
   function stagesTotalRaisedSoFar() {
     if (!presaleData) return 0;
@@ -414,28 +441,43 @@ export default function PresaleInterface() {
 
             {/* 1) Markers row */}
             <div className="relative w-full h-8 mb-0">
-              {presaleData && getStageMarkers().map((m, idx) => (
-                <div
-                  key={idx}
-                  className="absolute flex flex-col items-center"
-                  // Left offset is `pct%` minus half the arrow/label width
-                  style={{ left: `calc(${m.pct}% - 8px)` }}
-                >
-                  {/* Label above the arrow */}
-                  <span className="text-xs font-bold text-white mb-1">
-                    {m.label}
-                  </span>
+  {presaleData &&
+    getStageMarkers().map((m, idx) => {
+      // Determine arrow color based on marker status
+      let arrowColor;
+      let textColor;
+      if (m.status === "completed") {
+        arrowColor = "border-t-green-500"; // Tailwind green
+        textColor = "text-green-500";
+      } else if (m.status === "current") {
+        arrowColor = "border-t-yellow-500"; // Tailwind yellow
+        textColor = "text-yellow-500";
+      } else {
+        arrowColor = "border-t-white";
+        textColor = "text-white";
+      }
+      return (
+        <div
+          key={idx}
+          className="absolute flex flex-col items-center"
+          style={{ left: `calc(${m.pct}% - 8px)` }}
+        >
+          <span className={`text-xs font-bold mb-1 ${textColor}`}>
+            {m.label}
+          </span>
+          <div
+            className={`
+              w-0 h-0
+              border-l-4 border-r-4
+              border-l-transparent border-r-transparent
+              border-t-8 ${arrowColor}
+            `}
+          />
+        </div>
+      );
+    })}
+</div>
 
-                  {/* Downward arrow */}
-                  <div className="
-                    w-0 h-0
-                    border-l-4 border-r-4
-                    border-l-transparent border-r-transparent
-                    border-t-4 border-t-white
-                  " />
-                </div>
-              ))}
-            </div>
 
             {/* 2) The actual progress bar */}
             <div className="w-full h-4 bg-white/20 rounded-full overflow-hidden">

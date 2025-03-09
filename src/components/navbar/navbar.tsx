@@ -82,9 +82,9 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center bg-transparent relative z-30 px-6 py-4 w-full">
-      {/* Left Section: Social Media Icons */}
-      <div className="flex gap-6 flex-1">
+    <div className="flex justify-between items-center bg-transparent relative z-30 px-6 py-4">
+      {/* Left Side: Social Media Icons */}
+      <div className="flex gap-6">
         <a
           href="https://x.com/wusle_official?s=21"
           target="_blank"
@@ -103,161 +103,159 @@ const Navbar: React.FC = () => {
         </a>
       </div>
 
-      {/* Center Section: Main Nav & Logo */}
-      <div className="flex-1 flex justify-center items-center relative">
-        {isMobile ? (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-              <a
-                href="https://x.com/wusle_official?s=21"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border-2 border-[#9c23d5] bg-[#fce2ff] rounded-full w-10 h-10 flex items-center justify-center hover:text-black transition"
+      {/* Center: Main Nav (Desktop) or Hamburger (Mobile) */}
+      {isMobile ? (
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            <a
+              href="https://x.com/wusle_official?s=21"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-2 border-[#9c23d5] bg-[#fce2ff] rounded-full w-10 h-10 flex items-center justify-center hover:text-black transition"
+            >
+              <FaXTwitter className="text-[#9c23d5] text-3xl" />
+            </a>
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-white text-xl focus:outline-none"
+            >
+              <div className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer hover:text-black transition">
+                <Image
+                  src={Logo}
+                  alt="Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-full my-2"
+                />
+              </div>
+            </button>
+          </div>
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                className="absolute left-1/2 top-52 rounded-md transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-indigo-600/70 to-[#4f0289]/90 text-white w-[80%] flex flex-col justify-center items-center gap-6 py-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                <FaXTwitter className="text-[#9c23d5] text-3xl" />
-              </a>
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="text-white text-xl focus:outline-none"
+                {links.map((link) =>
+                  link.href.startsWith("#") ? (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={(e) => handleScroll(e, link.href)}
+                      className="relative px-4 py-2 rounded-md text-2xl font-semibold transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsOpen(false)}
+                      download={link.href.endsWith(".pdf") ? true : undefined}
+                      className="relative px-4 py-2 rounded-md text-2xl font-semibold transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                    >
+                      {link.label}
+                    </Link>
+                  )
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <div
+          className="relative items-center gap-8 hidden md:flex"
+          onMouseEnter={() => setIsOpen(true)}
+          onMouseLeave={() => setIsOpen(false)}
+        >
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={menuVariants.left}
+                className="absolute right-32 flex gap-8 text-lg font-semibold"
               >
-                <div className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer hover:text-black transition">
-                  <Image
-                    src={Logo}
-                    alt="Logo"
-                    width={40}
-                    height={40}
-                    className="rounded-full my-2"
-                  />
-                </div>
-              </button>
-            </div>
-            <AnimatePresence>
-              {isOpen && (
-                <motion.div
-                  className="absolute left-1/2 top-52 rounded-md transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-indigo-600/70 to-[#4f0289]/90 text-white w-[80%] flex flex-col justify-center items-center gap-6 py-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {links.map((link) =>
-                    link.href.startsWith("#") ? (
+                {leftLinks.map((link) => (
+                  <motion.div key={link.href} variants={itemVariants}>
+                    {link.href.startsWith("#") ? (
                       <a
-                        key={link.href}
                         href={link.href}
                         onClick={(e) => handleScroll(e, link.href)}
-                        className="relative px-4 py-2 rounded-md text-2xl font-semibold transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                        className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
                       >
                         {link.label}
                       </a>
                     ) : (
                       <Link
-                        key={link.href}
                         href={link.href}
-                        onClick={() => setIsOpen(false)}
                         download={link.href.endsWith(".pdf") ? true : undefined}
-                        className="relative px-4 py-2 rounded-md text-2xl font-semibold transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                        className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
                       >
                         {link.label}
                       </Link>
-                    )
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <div
-            className="flex items-center gap-8 hidden md:flex relative"
-            onMouseEnter={() => setIsOpen(true)}
-            onMouseLeave={() => setIsOpen(false)}
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Link
+            href="/"
+            className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer flex-shrink-0 hover:text-black transition"
           >
-            <AnimatePresence>
-              {isOpen && (
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                  variants={menuVariants.left}
-                  className="absolute left-0 flex gap-8 text-lg font-semibold"
-                >
-                  {leftLinks.map((link) => (
-                    <motion.div key={link.href} variants={itemVariants}>
-                      {link.href.startsWith("#") ? (
-                        <a
-                          href={link.href}
-                          onClick={(e) => handleScroll(e, link.href)}
-                          className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-                        >
-                          {link.label}
-                        </a>
-                      ) : (
-                        <Link
-                          href={link.href}
-                          download={link.href.endsWith(".pdf") ? true : undefined}
-                          className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-                        >
-                          {link.label}
-                        </Link>
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <Image
+              src={Logo}
+              alt="Logo"
+              width={65}
+              height={65}
+              className="rounded-full my-2"
+            />
+          </Link>
 
-            <Link
-              href="/"
-              className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer flex-shrink-0 hover:text-black transition"
-            >
-              <Image
-                src={Logo}
-                alt="Logo"
-                width={65}
-                height={65}
-                className="rounded-full my-2"
-              />
-            </Link>
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={menuVariants.right}
+                className="absolute left-32 flex gap-6 text-lg font-semibold"
+              >
+                {rightLinks.map((link) => (
+                  <motion.div key={link.href} variants={itemVariants}>
+                    {link.href.startsWith("#") ? (
+                      <a
+                        href={link.href}
+                        onClick={(e) => handleScroll(e, link.href)}
+                        className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        download={link.href.endsWith(".pdf") ? true : undefined}
+                        className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
-            <AnimatePresence>
-              {isOpen && (
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                  variants={menuVariants.right}
-                  className="absolute right-0 flex gap-6 text-lg font-semibold"
-                >
-                  {rightLinks.map((link) => (
-                    <motion.div key={link.href} variants={itemVariants}>
-                      {link.href.startsWith("#") ? (
-                        <a
-                          href={link.href}
-                          onClick={(e) => handleScroll(e, link.href)}
-                          className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-                        >
-                          {link.label}
-                        </a>
-                      ) : (
-                        <Link
-                          href={link.href}
-                          download={link.href.endsWith(".pdf") ? true : undefined}
-                          className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-                        >
-                          {link.label}
-                        </Link>
-                      )}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
-
-      {/* Right Section: Wallet Connect & Slider */}
-      <div className="flex items-center gap-3 flex-1 justify-end">
+      {/* Right Side: Wallet Connect & extra slider */}
+      <div className="flex items-center gap-3">
         {session?.user ? (
           <>
             <WalletMultiButton
@@ -358,372 +356,6 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-
-
-
-
-
-
-
-
-// "use client";
-
-// import { useState, useEffect } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import Link from "next/link";
-// import Image from "next/image";
-// import { FaXTwitter, FaInstagram, FaWallet } from "react-icons/fa6";
-// import Logo from "../../assets/Images/logo.jpeg";
-// import { useSession, signOut } from "next-auth/react";
-// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-// import LoginModal from "@/components/LoginModal";
-// import PurchaseHistoryModal from "@/components/PurchaseHistoryModal";
-// import { FaBars, FaSignInAlt } from "react-icons/fa";
-
-// const links = [
-//   { href: "#home", label: "Home" },
-//   { href: "#about", label: "About" },
-//   { href: "/whitepaper.pdf", label: "Whitepaper" },
-//   { href: "/Wusle_Audit.pdf", label: "Audit" },
-// ];
-
-// const Navbar: React.FC = () => {
-//   const { data: session } = useSession();
-//   const [showLogin, setShowLogin] = useState(false);
-//   const [isOpen, setIsOpen] = useState(false); // center nav open state
-//   const [sliderOpen, setSliderOpen] = useState(false); // right side slider
-//   const [showHistory, setShowHistory] = useState(false); // purchase history modal
-
-//   // Split nav links into left and right groups
-//   const half = Math.ceil(links.length / 2);
-//   const leftLinks = links.slice(0, half);
-//   const rightLinks = links.slice(half);
-
-//   // Mobile detection
-//   const [isMobile, setIsMobile] = useState(false);
-//   useEffect(() => {
-//     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-//     checkMobile();
-//     window.addEventListener("resize", checkMobile);
-//     return () => window.removeEventListener("resize", checkMobile);
-//   }, []);
-
-//   // Logout handler (redirects to home after logout)
-//   const handleLogout = () => {
-//     signOut({ callbackUrl: "/" });
-//   };
-
-//   // Framer-motion variants for center nav
-//   const menuVariants = {
-//     left: {
-//       hidden: { x: -50, opacity: 0 },
-//       visible: { x: 0, opacity: 1, transition: { staggerChildren: 0.1 } },
-//     },
-//     right: {
-//       hidden: { x: 50, opacity: 0 },
-//       visible: { x: 0, opacity: 1, transition: { staggerChildren: 0.1 } },
-//     },
-//   };
-
-//   const itemVariants = {
-//     hidden: { opacity: 0, y: -10 },
-//     visible: {
-//       opacity: 1,
-//       y: 0,
-//       transition: { type: "spring", stiffness: 120 },
-//     },
-//   };
-
-//   // Slide variants for right-side slider
-//   const slideVariants = {
-//     hidden: { x: "100%" },
-//     visible: { x: 0, transition: { duration: 0.4, ease: "easeOut" } },
-//   };
-
-//   function handleScroll(e: React.MouseEvent, id: string) {
-//     e.preventDefault();
-//     const element = document.querySelector(id);
-//     if (element) {
-//       element.scrollIntoView({ behavior: "smooth" });
-//       if (isMobile) setIsOpen(false);
-//     }
-//   }
-
-//   return (
-//     <div className="flex justify-between items-center bg-transparent relative z-30 px-6 py-4">
-//       {/* Left Side: Social Media Icons */}
-//       <div className="flex gap-6">
-//         <a
-//           href="https://x.com/wusle_official?s=21"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//           className="border-2 hidden md:flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition"
-//         >
-//           <FaXTwitter className="text-[#9c23d5] text-2xl" />
-//         </a>
-//         <a
-//           href="https://www.instagram.com/wusle_official/#"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//           className="border-2 hidden md:flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition"
-//         >
-//           <FaInstagram className="text-[#9c23d5] text-2xl" />
-//         </a>
-//       </div>
-
-//       {/* Center: Main Nav (Desktop) or Hamburger (Mobile) */}
-//       {isMobile ? (
-//         <div className="flex items-center justify-between w-full">
-//           <div className="flex items-center gap-2">
-//             <a
-//               href="https://x.com/wusle_official?s=21"
-//               target="_blank"
-//               rel="noopener noreferrer"
-//               className="border-2 border-[#9c23d5] bg-[#fce2ff] rounded-full w-10 h-10 flex items-center justify-center hover:text-black transition"
-//             >
-//               <FaXTwitter className="text-[#9c23d5] text-3xl" />
-//             </a>
-//             <button
-//               onClick={() => setIsOpen(!isOpen)}
-//               className="text-white text-xl focus:outline-none"
-//             >
-//               <div className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer hover:text-black transition">
-//                 <Image
-//                   src={Logo}
-//                   alt="Logo"
-//                   width={40}
-//                   height={40}
-//                   className="rounded-full my-2"
-//                 />
-//               </div>
-//             </button>
-//           </div>
-//           <AnimatePresence>
-//             {isOpen && (
-//               <motion.div
-//                 className="absolute left-1/2 top-52 rounded-md transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-indigo-600/70 to-[#4f0289]/90 text-white w-[80%] flex flex-col justify-center items-center gap-6 py-6"
-//                 initial={{ opacity: 0 }}
-//                 animate={{ opacity: 1 }}
-//                 exit={{ opacity: 0 }}
-//                 transition={{ duration: 0.5 }}
-//               >
-//                 {links.map((link) =>
-//                   link.href.startsWith("#") ? (
-//                     <a
-//                       key={link.href}
-//                       href={link.href}
-//                       onClick={(e) => handleScroll(e, link.href)}
-//                       className="relative px-4 py-2 rounded-md text-2xl font-semibold transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-//                     >
-//                       {link.label}
-//                     </a>
-//                   ) : (
-//                     <Link
-//                       key={link.href}
-//                       href={link.href}
-//                       onClick={() => setIsOpen(false)}
-//                       download={link.href.endsWith(".pdf") ? true : undefined}
-//                       className="relative px-4 py-2 rounded-md text-2xl font-semibold transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-//                     >
-//                       {link.label}
-//                     </Link>
-//                   )
-//                 )}
-//               </motion.div>
-//             )}
-//           </AnimatePresence>
-//         </div>
-//       ) : (
-//         <div
-//           className="relative items-center gap-8 hidden md:flex"
-//           onMouseEnter={() => setIsOpen(true)}
-//           onMouseLeave={() => setIsOpen(false)}
-//         >
-//           <AnimatePresence>
-//             {isOpen && (
-//               <motion.div
-//                 initial="hidden"
-//                 animate="visible"
-//                 exit="hidden"
-//                 variants={menuVariants.left}
-//                 className="absolute right-32 flex gap-8 text-lg font-semibold"
-//               >
-//                 {leftLinks.map((link) => (
-//                   <motion.div key={link.href} variants={itemVariants}>
-//                     {link.href.startsWith("#") ? (
-//                       <a
-//                         href={link.href}
-//                         onClick={(e) => handleScroll(e, link.href)}
-//                         className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-//                       >
-//                         {link.label}
-//                       </a>
-//                     ) : (
-//                       <Link
-//                         href={link.href}
-//                         download={link.href.endsWith(".pdf") ? true : undefined}
-//                         className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-//                       >
-//                         {link.label}
-//                       </Link>
-//                     )}
-//                   </motion.div>
-//                 ))}
-//               </motion.div>
-//             )}
-//           </AnimatePresence>
-
-//           <Link
-//             href="/"
-//             className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer flex-shrink-0 hover:text-black transition"
-//           >
-//             <Image
-//               src={Logo}
-//               alt="Logo"
-//               width={65}
-//               height={65}
-//               className="rounded-full my-2"
-//             />
-//           </Link>
-
-//           <AnimatePresence>
-//             {isOpen && (
-//               <motion.div
-//                 initial="hidden"
-//                 animate="visible"
-//                 exit="hidden"
-//                 variants={menuVariants.right}
-//                 className="absolute left-32 flex gap-6 text-lg font-semibold"
-//               >
-//                 {rightLinks.map((link) => (
-//                   <motion.div key={link.href} variants={itemVariants}>
-//                     {link.href.startsWith("#") ? (
-//                       <a
-//                         href={link.href}
-//                         onClick={(e) => handleScroll(e, link.href)}
-//                         className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-//                       >
-//                         {link.label}
-//                       </a>
-//                     ) : (
-//                       <Link
-//                         href={link.href}
-//                         download={link.href.endsWith(".pdf") ? true : undefined}
-//                         className="relative px-4 py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
-//                       >
-//                         {link.label}
-//                       </Link>
-//                     )}
-//                   </motion.div>
-//                 ))}
-//               </motion.div>
-//             )}
-//           </AnimatePresence>
-//         </div>
-//       )}
-
-//       {/* Right Side: Wallet Connect & extra slider */}
-//       <div className="flex items-center gap-3">
-//         {session?.user ? (
-//           <>
-//             <WalletMultiButton
-//               style={{
-//                 fontSize: "16px",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 fontWeight: "bold",
-//                 color: "black",
-//                 background: "white",
-//                 border: "2px solid #9c23d5",
-//                 borderRadius: "50px",
-//                 cursor: "pointer",
-//                 transition: "all 0.3s ease-in-out",
-//                 padding: "10px 20px",
-//                 textAlign: "center",
-//                 backgroundColor: "#fce2ff",
-//               }}
-//             >
-//               {isMobile ? <FaWallet className="text-2xl" /> : "CONNECT WALLET"}
-//             </WalletMultiButton>
-
-//             {/* Enhanced Slider for User Options */}
-//             <div className="relative">
-//               <button
-//                 onClick={() => setSliderOpen(!sliderOpen)}
-//                 className="text-[#9c23d5] border-2 border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 flex items-center justify-center hover:text-black transition transform hover:scale-110"
-//               >
-//                 <FaBars className="text-xl" />
-//               </button>
-//               <AnimatePresence>
-//                 {sliderOpen && (
-//                   <motion.div
-//                     className="fixed top-0 right-0 w-[300px] h-full bg-gradient-to-br from-[#4f0289]/80 to-[#9c23d5]/80 text-white z-50 flex flex-col p-8 [clip-path:polygon(0% 0%, 100% 0%, 90% 100%, 0% 100%)] shadow-2xl"
-//                     variants={slideVariants}
-//                     initial="hidden"
-//                     animate="visible"
-//                     exit="hidden"
-//                   >
-//                     <button
-//                       onClick={() => setSliderOpen(false)}
-//                       className="self-end text-3xl hover:text-gray-300 transition"
-//                     >
-//                       &times;
-//                     </button>
-//                     <div className="mt-10 flex flex-col gap-6">
-//                       <button
-//                         onClick={() => setShowHistory(true)}
-//                         className="relative px-4 py-2 rounded-md text-xl transition duration-300 hover:bg-white/20"
-//                       >
-//                         Purchase History
-//                       </button>
-//                       <button
-//                         onClick={handleLogout}
-//                         className="relative px-4 py-2 rounded-md text-xl transition duration-300 hover:bg-white/20"
-//                       >
-//                         Logout
-//                       </button>
-//                     </div>
-//                   </motion.div>
-//                 )}
-//               </AnimatePresence>
-//             </div>
-//           </>
-//         ) : (
-//           <button
-//             onClick={() => setShowLogin(true)}
-//             style={{
-//               fontSize: "16px",
-//               display: "flex",
-//               alignItems: "center",
-//               justifyContent: "center",
-//               fontWeight: "bold",
-//               color: "black",
-//               background: "white",
-//               borderRadius: "50px",
-//               cursor: "pointer",
-//               transition: "all 0.3s ease-in-out",
-//               padding: "10px 20px",
-//               textAlign: "center",
-//               backgroundColor: "#fce2ff",
-//               border: "2px solid #9c23d5",
-//             }}
-//           >
-//             {isMobile ? <FaSignInAlt className="text-2xl" /> : "LOGIN"}
-//           </button>
-//         )}
-//       </div>
-
-//       {/* Login Modal */}
-//       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
-
-//       {/* Purchase History Modal */}
-//       <PurchaseHistoryModal show={showHistory} onClose={() => setShowHistory(false)} />
-//     </div>
-//   );
-// };
-
-// export default Navbar;
 
 
 

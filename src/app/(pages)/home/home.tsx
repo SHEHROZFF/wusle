@@ -50,16 +50,16 @@ export default function Home() {
       />
 
       {/* Foreground content */}
-      <div className="overflow-x-hidden relative z-10 flex flex-col   h-full px-4 text-center  md:mt-36 mt-24 md:mr-4 mr-0">
+      <div className="overflow-x-hidden relative z-10 flex flex-col h-full px-4 text-center  md:mt-36 mt-36 md:mr-4 mr-0">
         <div className="flex flex-wrap items-center justify-center gap-4  md:mr-12 mr-0">
           <motion.h1
-            className="text-6xl  tracking-widest font-black text-white/80 font-nunito md:text-7xl  uppercase animate__animated animate__fadeIn"
+            className="text-7xl  tracking-widest font-black text-white/80 font-nunito md:text-8xl  uppercase animate__animated animate__fadeIn"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
             Wu
-            <span className="relative inline-block md:size-36 size-20 align-middle z-50">
+            <span className="relative inline-block md:size-36 size-32 align-middle z-50">
               <Image src={S_Image} alt="S" fill className="object-contain" />
             </span>
             le

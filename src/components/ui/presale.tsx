@@ -177,7 +177,7 @@ export default function PresaleInterface() {
     return stages.map((st) => {
       cumulative += st.target;
       const pct = (cumulative / totalCap) * 100;
-      return { pct, label: `Stage ${st.stageNumber}` };
+      return { pct, label: `${st.stageNumber}` };
     });
   }
 
@@ -382,7 +382,7 @@ export default function PresaleInterface() {
         )}
 
         {/* Progress + markers */}
-        <div className="mt-5 px-3">
+        {/* <div className="mt-5 px-3">
           <div className="relative w-full h-4 bg-white/20 rounded-full overflow-hidden">
             <div
               className="absolute left-0 top-0 h-full bg-purple-400 transition-all duration-300"
@@ -406,7 +406,47 @@ export default function PresaleInterface() {
                 </div>
               ))}
           </div>
+        </div> */}
+        {/* Progress + Markers */}
+        <div className="mt-5 px-3">
+          {/* Outer container for markers + progress bar */}
+          <div className="relative">
+
+            {/* 1) Markers row */}
+            <div className="relative w-full h-8 mb-0">
+              {presaleData && getStageMarkers().map((m, idx) => (
+                <div
+                  key={idx}
+                  className="absolute flex flex-col items-center"
+                  // Left offset is `pct%` minus half the arrow/label width
+                  style={{ left: `calc(${m.pct}% - 8px)` }}
+                >
+                  {/* Label above the arrow */}
+                  <span className="text-xs font-bold text-white mb-1">
+                    {m.label}
+                  </span>
+
+                  {/* Downward arrow */}
+                  <div className="
+                    w-0 h-0
+                    border-l-4 border-r-4
+                    border-l-transparent border-r-transparent
+                    border-t-4 border-t-white
+                  " />
+                </div>
+              ))}
+            </div>
+
+            {/* 2) The actual progress bar */}
+            <div className="w-full h-4 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-purple-400 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
         </div>
+
 
         {/* WUSLE SOLD / USDT RAISED */}
         <div className="flex justify-between text-xs sm:text-sm text-purple-200 mt-2 px-3">
@@ -519,13 +559,13 @@ export default function PresaleInterface() {
                   transition-colors duration-200
                 "
               />
-              <span className="text-white text-xl">
+              <span className="text-white text-xl border-2 rounded-full py-1 bg-white">
                 <Image
                   src={Wusle}
                   alt="WUSLE"
                   width={36}
                   height={36}
-                  className="rounded-full"
+                  className="rounded-full "
                 />
               </span>
             </div>
@@ -533,47 +573,49 @@ export default function PresaleInterface() {
         </div>
 
         {/* Connect wallet / buy / login section */}
-        <div className="mt-5 flex flex-row items-center justify-center gap-7 pb-2">
-          {!session?.user ? (
-            <Button
-              onClick={() => setShowLogin(true)}
-              className="px-6 py-3 text-white font-bold bg-purple-900 hover:bg-purple-700 animate-heartbeat"
-            >
-              CONNECT YOUR WALLET
-            </Button>
-          ) : (
-            <WalletMultiButton
-            style={{
-              fontSize: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-              color: "white",
-              borderRadius: "50px",
-              background: "#9c23d5",
-              border: "none",
-              cursor: "pointer",
-              transition: "all 0.3s ease-in-out",
-              animation: "heartbeat 0.5s infinite ease-in-out",
-              padding: "10px 20px",
-              textAlign: "center",
-            }}
-          >
-            CONNECT WALLET
-          </WalletMultiButton>
-          )}
+        <div className="mt-5 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
+  {!session?.user ? (
+    <Button
+      onClick={() => setShowLogin(true)}
+      className="w-full sm:w-auto px-6 py-3 text-white font-bold bg-purple-900 hover:bg-purple-700 animate-heartbeat"
+    >
+      CONNECT YOUR WALLET
+    </Button>
+  ) : (
+    <WalletMultiButton
+      style={{
+        fontSize: "16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: "bold",
+        color: "white",
+        borderRadius: "50px",
+        background: "#9c23d5",
+        border: "none",
+        cursor: "pointer",
+        transition: "all 0.3s ease-in-out",
+        animation: "heartbeat 0.5s infinite ease-in-out",
+        padding: "10px 20px",
+        textAlign: "center",
+      }}
+      className="w-20 sm:w-auto"
+    >
+      CONNECT WALLET
+    </WalletMultiButton>
+  )}
 
-          {/* Show BUY NOW only if user & wallet connected */}
-          {session?.user && publicKey && connected && (
-            <Button
-              onClick={handleBuyNow}
-              className="px-16 py-6 text-white font-bold bg-purple-600 hover:bg-purple-700 animate-heartbeat rounded-full "
-            >
-              BUY NOW
-            </Button>
-          )}
-        </div>
+  {/* Show BUY NOW only if user & wallet connected */}
+  {session?.user && publicKey && connected && (
+    <Button
+      onClick={handleBuyNow}
+      className="w-20 sm:w-auto px-16 py-6 text-white font-bold bg-purple-600 hover:bg-purple-700 animate-heartbeat rounded-full"
+    >
+      BUY NOW
+    </Button>
+  )}
+</div>
+
       </div>
 
       {/* The login modal */}
@@ -590,6 +632,98 @@ export default function PresaleInterface() {
 }
 
 /* ---------- The "Teeth" receipt modal ---------- */
+function ReceiptModal({
+  show,
+  slip,
+  onClose,
+}: {
+  show: boolean;
+  slip: SlipData | null;
+  onClose: () => void;
+}) {
+  if (!show || !slip) return null;
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {/* Click outside to close */}
+          <div className="absolute inset-0" onClick={onClose} />
+
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="
+              relative
+              p-6
+              w-full
+              max-w-md
+              bg-gradient-to-br from-[#4f0289]/40 to-[#9c23d5]/40
+              backdrop-blur-xl
+              border border-white/20 ring-1 ring-white/20
+              text-white
+              flex flex-col
+              shadow-2xl
+              before:absolute before:top-0 before:left-0 before:w-full before:h-3
+              before:bg-[url('/zigzag-top.svg')]
+              after:absolute after:bottom-0 after:left-0 after:w-full after:h-3
+              after:bg-[url('/zigzag-bottom.svg')]
+            "
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 text-white text-2xl hover:text-gray-300"
+            >
+              &times;
+            </button>
+
+            <h2 className="text-2xl font-extrabold text-center mb-4 uppercase">
+              Purchase Receipt
+            </h2>
+
+            <div className="text-sm flex flex-col gap-2">
+              <p>
+                <span className="font-bold">Slip ID:</span> {slip.id}
+              </p>
+              <p>
+                <span className="font-bold">Wallet:</span> {slip.walletAddress}
+              </p>
+              <p>
+                <span className="font-bold">Currency:</span> {slip.currency}
+              </p>
+              <p>
+                <span className="font-bold">Amount Paid:</span> {slip.amountPaid}
+              </p>
+              <p>
+                <span className="font-bold">WUSLE Purchased:</span>{" "}
+                {slip.wuslePurchased}
+              </p>
+              <div className="mt-2 p-2 bg-white/20 rounded-md">
+                <span className="font-bold">Redeem Code:</span>{" "}
+                <span className="font-mono text-purple-100">
+                  {slip.redeemCode}
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-4 text-center text-xs text-gray-300">
+              Keep this slip code safe to redeem your WUSLE tokens later!
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // function ReceiptModal({
 //   show,
 //   slip,
@@ -3454,94 +3588,3 @@ export default function PresaleInterface() {
 // }
 
 
-function ReceiptModal({
-  show,
-  slip,
-  onClose,
-}: {
-  show: boolean;
-  slip: SlipData | null;
-  onClose: () => void;
-}) {
-  if (!show || !slip) return null;
-
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {/* Click outside to close */}
-          <div className="absolute inset-0" onClick={onClose} />
-
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0, y: 50 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: 50 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="
-              relative
-              p-6
-              w-full
-              max-w-md
-              bg-gradient-to-br from-[#4f0289]/40 to-[#9c23d5]/40
-              backdrop-blur-xl
-              border border-white/20 ring-1 ring-white/20
-              text-white
-              flex flex-col
-              shadow-2xl
-              before:absolute before:top-0 before:left-0 before:w-full before:h-3
-              before:bg-[url('/zigzag-top.svg')]
-              after:absolute after:bottom-0 after:left-0 after:w-full after:h-3
-              after:bg-[url('/zigzag-bottom.svg')]
-            "
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 text-white text-2xl hover:text-gray-300"
-            >
-              &times;
-            </button>
-
-            <h2 className="text-2xl font-extrabold text-center mb-4 uppercase">
-              Purchase Receipt
-            </h2>
-
-            <div className="text-sm flex flex-col gap-2">
-              <p>
-                <span className="font-bold">Slip ID:</span> {slip.id}
-              </p>
-              <p>
-                <span className="font-bold">Wallet:</span> {slip.walletAddress}
-              </p>
-              <p>
-                <span className="font-bold">Currency:</span> {slip.currency}
-              </p>
-              <p>
-                <span className="font-bold">Amount Paid:</span> {slip.amountPaid}
-              </p>
-              <p>
-                <span className="font-bold">WUSLE Purchased:</span>{" "}
-                {slip.wuslePurchased}
-              </p>
-              <div className="mt-2 p-2 bg-white/20 rounded-md">
-                <span className="font-bold">Redeem Code:</span>{" "}
-                <span className="font-mono text-purple-100">
-                  {slip.redeemCode}
-                </span>
-              </div>
-            </div>
-
-            <p className="mt-4 text-center text-xs text-gray-300">
-              Keep this slip code safe to redeem your WUSLE tokens later!
-            </p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}

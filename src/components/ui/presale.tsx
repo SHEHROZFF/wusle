@@ -49,6 +49,8 @@ interface PresaleAPIResponse {
   endsAt: string;
   wusleRate: number;
   listingPrice: number;
+  totalWusleSupply: string;
+  liquidityAtLaunch: string;
 }
 
 interface Countdown {
@@ -90,6 +92,31 @@ export default function PresaleInterface() {
   // For receipt modal
   const [showReceipt, setShowReceipt] = useState(false);
   const [slip, setSlip] = useState<SlipData | null>(null);
+
+    // At the top of your component:
+  const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(null);
+
+  // Function to refresh user stats from your new API endpoint:
+  async function refreshUserStats() {
+    try {
+      const res = await fetch("/api/user");
+      const data = await res.json();
+      if (res.ok) {
+        setUserStats(data);
+      } else {
+        console.error("Error fetching user stats:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+    }
+  }
+
+  // Optionally, fetch stats on mount if the session exists:
+  useEffect(() => {
+    if (session?.user) {
+      refreshUserStats();
+    }
+  }, [session]);
 
   // 1) Fetch presale data once (or poll every X seconds)
   useEffect(() => {
@@ -360,7 +387,7 @@ export default function PresaleInterface() {
           {presaleData && (
             <>
               <p className="text-sm sm:text-base mt-1 text-gray-200 font-bold">
-                LIQUIDITY AT LAUNCH: 2,222,222 USDT
+                LIQUIDITY AT LAUNCH: ${presaleData.liquidityAtLaunch} USDT
               </p>
               <p className="text-lg sm:text-xl mt-1 text-purple-100 font-semibold">
                 IS NOW LIVE!
@@ -500,8 +527,8 @@ export default function PresaleInterface() {
                     stagesTotalRaisedSoFar() /
                     (presaleData.wusleRate || 0.0037)
                   ).toLocaleString(undefined, { maximumFractionDigits: 0 })
-                : 0}
-              {" / ???"}
+                : 0}{" "}
+                / {presaleData ? presaleData.totalWusleSupply : 0}
             </span>
           </div>
           <div className="flex flex-col text-right">
@@ -525,11 +552,17 @@ export default function PresaleInterface() {
         )}
 
         {/* "YOUR PURCHASED WUSLE" placeholder */}
-        <div className="text-center mt-3 text-sm">
-          <span className="text-purple-200 uppercase text-xs">YOUR PURCHASED WUSLE</span>
-          <br />
-          <span className="font-bold text-xl text-white">0</span>
-        </div>
+        {session?.user  && (
+            <div className="text-center mt-3 text-sm">
+            <span className="text-purple-200 uppercase text-xs">YOUR PURCHASED WUSLE</span>
+            <br />
+            <span className="font-bold text-xl text-white">
+              {(userStats?.wuslePurchased ?? 0).toFixed(5)}
+            </span>
+
+          </div>
+        )}
+
 
         {/* Currency selection */}
         <div className="mt-4 flex items-center justify-center gap-4">

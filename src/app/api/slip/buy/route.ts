@@ -26,7 +26,14 @@ export async function POST(req: NextRequest) {
     // In real life, you'd do a Solana or USDT on-chain transaction.
     // For now, we just pretend it's successful.
     console.log("Simulating wallet transfer from", walletAddress, "to your receiver...");
-
+    await prisma.user.update({
+      where: { email: session.user.email },
+      data: {
+        spent: { increment: amountPaid },
+        wuslePurchased: { increment: wuslePurchased },
+      },
+    });
+    
     // 4) Generate a random code for redemption
     const code = crypto.randomBytes(8).toString("hex"); // e.g. "a1b2c3d4..."
     

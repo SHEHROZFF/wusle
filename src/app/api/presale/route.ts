@@ -32,6 +32,8 @@ export async function GET(request: Request) {
     let endsAt = new Date().toISOString();
     let wusleRate = 0.0037;
     let listingPrice = 0.005;
+    let totalWusleSupply = '15,745,652,174' ;
+    let liquidityAtLaunch = '1,000,000,000';
 
     if (stage) {
       currentStage = stage.stageNumber;
@@ -46,6 +48,8 @@ export async function GET(request: Request) {
       endsAt,
       wusleRate,
       listingPrice,
+      totalWusleSupply,
+      liquidityAtLaunch
     });
   } catch (err) {
     console.error("presale error:", err);

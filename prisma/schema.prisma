@@ -13,6 +13,8 @@ model User {
   password  String?
   name      String?
   createdAt DateTime @default(now())
+  wuslePurchased Float @default(0)
+  spent     Float      @default(0)
 
   // For password reset
   passwordResetToken   String?

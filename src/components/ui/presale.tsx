@@ -676,20 +676,20 @@ export default function PresaleInterface() {
       }}
       className="w-20 sm:w-auto"
     >
-      CONNECT WALLET
+      {connected ?  "CONNECTED" : "CONNECT WALLET"}
     </WalletMultiButton>
   )}
 
   {/* Show BUY NOW only if user & wallet connected */}
-  {session?.user && publicKey && connected && (
-    <Button
-      onClick={handleBuyNow}
-      className="w-20 sm:w-auto px-16 py-6 text-white font-bold bg-purple-600 hover:bg-purple-700 animate-heartbeat rounded-full"
-    >
-      BUY NOW
-    </Button>
-  )}
-</div>
+        {session?.user && publicKey && connected && (
+          <Button
+            onClick={handleBuyNow}
+            className="w-20 sm:w-auto px-16 py-6 text-white font-bold bg-purple-600 hover:bg-purple-700 animate-heartbeat rounded-full"
+          >
+            BUY NOW
+          </Button>
+        )}
+      </div>
 
       </div>
 

@@ -15,8 +15,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useSession } from "next-auth/react";
 import LoginModal from "@/components/LoginModal";
-// import Lottie from "lottie-react";
-// import lottieAnimation from "@/assets/Images/wave.json";
+import Lottie from "lottie-react";
+import lottieAnimation from "@/assets/Images/wave.json";
 
 
 // For real SOL transactions on devnet:
@@ -409,9 +409,9 @@ export default function PresaleInterface() {
           )}
         </div>
         {/* Lottie Animation */}
-        {/* <div className="w-full max-w-44 mx-auto mb-4">
+        <div className="w-full max-w-44 mx-auto mb-4">
           <Lottie animationData={lottieAnimation} loop={true} />
-        </div> */}
+        </div>
 
 
         {/* Countdown */}

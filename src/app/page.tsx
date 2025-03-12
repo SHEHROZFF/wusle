@@ -17,7 +17,7 @@ export default function Page() {
         <Navbar />
         <Home />
 
-        <div className="absolute w-[90%] top-[65%] md:top-[68%] left-1/2 md:left-[49%] transform -translate-x-1/2 -translate-y-1/2 z-20">
+        <div className="absolute w-[90%] top-[71%] md:top-[73%] left-1/2 md:left-[49%] transform -translate-x-1/2 -translate-y-1/2 z-20">
           <PresaleInterface />
         </div>
       </div>

@@ -309,7 +309,9 @@ const Navbar: React.FC = () => {
                   initial="hidden"
                   animate="visible"
                   exit="hidden"
-                  className="absolute top-2 left-1/2 transform -translate-x-1/2 flex gap-40 text-lg font-semibold bg-gradient-to-br from-[#4f0289]/80 to-[#9c23d5]/80 px-10 py-3 rounded-full"
+                  className="absolute top-2 left-1/2 transform -translate-x-1/2 flex gap-40 text-lg font-semibold bg-gradient-to-br from-indigo-600/70 to-[#4f0289]/90 px-10 py-3 rounded-full"
+
+                  
                 >
                   <div className="flex gap-6">
                     {leftLinks.map((link) => (

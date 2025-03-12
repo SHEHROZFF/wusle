@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 
 export interface ReceiptModalProps {
   show: boolean;
@@ -20,7 +21,7 @@ export interface ReceiptModalProps {
 const ReceiptModal: React.FC<ReceiptModalProps> = ({ show, slip, onClose }) => {
   if (!show || !slip) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {show && (
         <motion.div
@@ -38,6 +39,11 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ show, slip, onClose }) => {
             className="relative p-6 w-full max-w-md bg-gradient-to-br from-[#4f0289]/40 to-[#9c23d5]/40 backdrop-blur-xl border border-white/20 ring-1 ring-white/20 text-white flex flex-col shadow-2xl [clip-path:polygon(0% 0%, 100% 0%, 100% 90%, 90% 80%, 80% 90%, 70% 80%, 60% 90%, 50% 80%, 40% 90%, 30% 80%, 20% 90%, 10% 80%, 0% 90%)]"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Background image div */}
+            <div
+              className="absolute inset-0 bg-[url('/wusle.jpg')] bg-center bg-cover bg-no-repeat opacity-10 pointer-events-none rounded-full"
+            />
+
             <button
               onClick={onClose}
               className="absolute top-3 right-3 text-white text-2xl hover:text-gray-300"
@@ -74,7 +80,8 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ show, slip, onClose }) => {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

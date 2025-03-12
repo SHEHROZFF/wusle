@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Logo from "../assets/Images/logo.jpeg";
-import ForgotPasswordModal from "./ForgotPasswordModal"; // The new enhanced forgot modal
+import ForgotPasswordModal from "./ForgotPasswordModal"; // The new 
+// enhanced forgot modal
+
+import { createPortal } from 'react-dom';
 
 interface Props {
   show: boolean;
@@ -78,7 +81,7 @@ export default function LoginModal({ show, onClose }: Props) {
     await signIn("google");
   };
 
-  return (
+  return createPortal(
     <>
       <AnimatePresence>
         {show && (
@@ -143,7 +146,7 @@ export default function LoginModal({ show, onClose }: Props) {
                   alt="Logo"
                   width={60}
                   height={60}
-                  className="rounded-full border-2 border-white"
+                  className="rounded-full  border-4 border-[#9c23d5] bg-white flex-shrink-0 hover:text-black transition py-2 "
                 />
               </div>
 
@@ -152,9 +155,8 @@ export default function LoginModal({ show, onClose }: Props) {
               </h2>
 
               {/* Some short text */}
-              <p className="text-center text-sm text-gray-200 mb-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                Quisque blandit imperdiet sapien, eu malesuada elit faucibus sed.
+              <p className="text-center text-md font-sans text-gray-200 mb-4">
+              Track your heart health, earn Wusle Coins, and unlock rewards! Stay fit, get rewarded—because every heartbeat counts.❤️
               </p>
 
               {/* If creating new account, show Name field */}
@@ -248,9 +250,9 @@ export default function LoginModal({ show, onClose }: Props) {
 
               {/* Forgot link if not sign up */}
               {!isSignUp && (
-                <div className="text-center mb-3">
+                <div className="text-right -mt-3">
                   <button
-                    className="text-sm underline text-blue-300 hover:text-blue-400"
+                    className="text-sm font-bold text-purple-300 hover:text-purple-400"
                     onClick={() => setShowForgot(true)}
                   >
                     Forgot Password?
@@ -259,13 +261,13 @@ export default function LoginModal({ show, onClose }: Props) {
               )}
 
               {/* Toggle between Sign In & Sign Up */}
-              <div className="text-center text-sm mt-auto">
+              <div className="text-center text-sm font-bold mt-6">
                 {isSignUp ? (
                   <>
                     Already have an account?{" "}
                     <span
                       onClick={() => setIsSignUp(false)}
-                      className="text-white underline cursor-pointer hover:text-gray-300"
+                      className="text-[#d199eb] font-bold cursor-pointer hover:text-purple-500"
                     >
                       Sign In
                     </span>
@@ -275,7 +277,7 @@ export default function LoginModal({ show, onClose }: Props) {
                     Don’t have an account?{" "}
                     <span
                       onClick={() => setIsSignUp(true)}
-                      className="text-white underline cursor-pointer hover:text-gray-300"
+                      className="text-[#d199eb] font-bold cursor-pointer hover:text-purple-500"
                     >
                       Sign Up
                     </span>
@@ -292,7 +294,8 @@ export default function LoginModal({ show, onClose }: Props) {
         show={showForgot}
         onClose={() => setShowForgot(false)}
       />
-    </>
+    </>,
+    document.body
   );
 }
 

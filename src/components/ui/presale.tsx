@@ -649,38 +649,38 @@ export default function PresaleInterface() {
 
         {/* Connect wallet / buy / login section */}
         <div className="mt-5 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
-  {!session?.user ? (
-    <Button
-      onClick={() => setShowLogin(true)}
-      className="w-full sm:w-auto px-6 py-3 text-white font-bold bg-purple-900 hover:bg-purple-700 animate-heartbeat"
-    >
-      CONNECT YOUR WALLET
-    </Button>
-  ) : (
-    <WalletMultiButton
-      style={{
-        fontSize: "16px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: "bold",
-        color: "white",
-        borderRadius: "50px",
-        background: "#9c23d5",
-        border: "none",
-        cursor: "pointer",
-        transition: "all 0.3s ease-in-out",
-        animation: "heartbeat 0.5s infinite ease-in-out",
-        padding: "10px 20px",
-        textAlign: "center",
-      }}
-      className="w-20 sm:w-auto"
-    >
-      {connected ?  "CONNECTED" : "CONNECT WALLET"}
-    </WalletMultiButton>
-  )}
+        {!session?.user ? (
+          <Button
+            onClick={() => setShowLogin(true)}
+            className="w-full sm:w-auto px-6 py-3 text-white font-bold bg-purple-900 hover:bg-purple-700 animate-heartbeat"
+          >
+            CONNECT YOUR WALLET
+          </Button>
+        ) : (
+          <WalletMultiButton
+            style={{
+              fontSize: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              color: "white",
+              borderRadius: "50px",
+              background: "#9c23d5",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.3s ease-in-out",
+              animation: "heartbeat 0.5s infinite ease-in-out",
+              padding: "10px 20px",
+              textAlign: "center",
+            }}
+            className="w-20 sm:w-auto"
+          >
+            {connected ?  "CONNECTED" : "CONNECT WALLET"}
+          </WalletMultiButton>
+        )}
 
-  {/* Show BUY NOW only if user & wallet connected */}
+        {/* Show BUY NOW only if user & wallet connected */}
         {session?.user && publicKey && connected && (
           <Button
             onClick={handleBuyNow}

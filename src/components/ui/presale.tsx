@@ -15,7 +15,10 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useSession } from "next-auth/react";
 import LoginModal from "@/components/LoginModal";
-import Lottie from "lottie-react";
+import dynamic from "next/dynamic";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+
 import lottieAnimation from "@/assets/Images/wave.json";
 
 

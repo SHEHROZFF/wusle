@@ -36,7 +36,7 @@ const Navbar: React.FC = () => {
   // Mobile detection: treat screens less than 1106px as mobile
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1106);
+    const checkMobile = () => setIsMobile(window.innerWidth < 1220);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
@@ -320,7 +320,7 @@ const Navbar: React.FC = () => {
                           <a
                             href={link.href}
                             onClick={(e) => handleScroll(e, link.href)}
-                            className="relative py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                            className="relative py-2 px-4 rounded-full text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
                           >
                             {link.label}
                           </a>
@@ -328,7 +328,7 @@ const Navbar: React.FC = () => {
                           <Link
                             href={link.href}
                             download={link.href.endsWith(".pdf") ? true : undefined}
-                            className="relative py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                            className="relative py-2 px-4 rounded-full text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
                           >
                             {link.label}
                           </Link>
@@ -343,7 +343,7 @@ const Navbar: React.FC = () => {
                           <a
                             href={link.href}
                             onClick={(e) => handleScroll(e, link.href)}
-                            className="relative py-2  rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                            className="relative py-2 px-4 rounded-full text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
                           >
                             {link.label}
                           </a>
@@ -351,7 +351,7 @@ const Navbar: React.FC = () => {
                           <Link
                             href={link.href}
                             download={link.href.endsWith(".pdf") ? true : undefined}
-                            className="relative py-2 rounded-md text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
+                            className="relative py-2 px-4 rounded-full text-white transition duration-300 hover:bg-gradient-to-br hover:from-[#4f0289]/80 hover:to-[#9c23d5]/80"
                           >
                             {link.label}
                           </Link>

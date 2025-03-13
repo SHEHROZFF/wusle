@@ -58,7 +58,7 @@ export default function Home() {
       {/* Foreground content */}
       <div
         className={`relative z-10 flex flex-col px-4 text-center ${
-          isMobile ? "mt-32" : "mt-56"
+          isMobile ? "mt-32" : "mt-40"
         }`}
       >
         <div
@@ -68,7 +68,7 @@ export default function Home() {
         >
           <motion.h1
             className={`tracking-widest font-black text-white/80 font-nunito uppercase animate__animated animate__fadeIn ${
-              isMobile ? "text-5xl" : "md:text-9xl "
+              isMobile ? "text-5xl" : "text-9xl "
             }`}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

@@ -28,7 +28,7 @@ const faqs: FAQ[] = [
   {
     question: "WHY WUSLE?",
     answer:
-      "You can buy tokens through our platform using supported cryptocurrencies or fiat methods.",
+      "You can buy Coins through our platform using supported cryptocurrencies or fiat methods.",
   },
   {
     question: "HOW CAN I GET NFT?",
@@ -144,7 +144,7 @@ const FAQSection: React.FC = () => {
         viewport={{ once: true, amount: 0.3 }}
       >
         {/* Fancy Card with diagonal gradient + mild rotation on hover */}
-        <div className={`relative md:p-6 rounded-xl shadow-2xl   ${isMobile ? "" : "transition transform hover:-rotate-1 hover:scale-[1.01]"}`}>
+        <div className={`relative md:p-6    ${isMobile ? "" : "transition transform hover:-rotate-1 hover:scale-[1.01]"}`}>
           {/* Lottie Animation near Title */}
           <div className="flex justify-center">
             <div className={`${isMobile ? "w-40 h-40" : "w-60 h-60"}`}>

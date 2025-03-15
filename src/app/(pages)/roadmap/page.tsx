@@ -26,9 +26,9 @@ const phases = [
     image: Watch2,
   },
   {
-    title: "Presale and Token Launch",
+    title: "Presale and Coin Launch",
     description:
-      "Introducing Wusle Coin to early investors and launching the token.",
+      "Introducing Wusle Coin to early investors and launching the coin.",
     quarter: "Q3 2024",
     image: Watch3,
   },

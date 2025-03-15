@@ -75,7 +75,7 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ show, slip, onClose }) => {
               </div>
             </div>
             <p className="mt-4 text-center text-xs text-gray-300">
-              Keep this slip code safe to redeem your WUSLE tokens later!
+              Keep this slip code safe to redeem your WUSLE Coins later!
             </p>
           </motion.div>
         </motion.div>

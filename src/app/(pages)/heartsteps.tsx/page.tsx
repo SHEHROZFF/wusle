@@ -22,7 +22,7 @@ const HeartSteps: React.FC = () => {
     {
       id: 2,
       title: "SELECT THE AMOUNT",
-      description: "Choose your currency and invest in Wusle Tokens",
+      description: "Choose your currency and invest in Wusle Coins",
     },
     {
       id: 3,

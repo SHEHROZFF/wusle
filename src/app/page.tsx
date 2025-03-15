@@ -11,9 +11,11 @@ import Footer from "./(pages)/footer/page";
 import PresaleInterface from "@/components/ui/presale";
 import Faq from "./(pages)/faq/page";
 import { useIsMobile } from "@/hooks/useIsMobile"; // adjust the import path as needed
+import { useSession } from "next-auth/react";
 
 export default function Page() {
   const isMobile = useIsMobile();
+  const { data: session } = useSession();
 
   return (
     <>
@@ -22,7 +24,7 @@ export default function Page() {
         <Home />
         {isMobile ? (
           // Mobile-specific positioning/styling
-          <div className="absolute w-[100%] top-[80%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 ">
+          <div className={`absolute w-[100%]  left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${session?.user ? "top-[85%]" : "top-[79%]"}`}>
             <PresaleInterface />
           </div>
         ) : (

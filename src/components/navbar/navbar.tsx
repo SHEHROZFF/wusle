@@ -35,11 +35,15 @@ const Navbar: React.FC = () => {
 
   // Mobile detection: treat screens less than 1106px as mobile
   const [isMobile, setIsMobile] = useState(false);
+  const [isWide, setIsWide] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1220);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+  useEffect(() => {
+    setIsWide(window.innerWidth > 480);
   }, []);
 
   // Logout handler (redirects to home after logout)
@@ -87,25 +91,29 @@ const Navbar: React.FC = () => {
     <>
       {isMobile ? (
         // Mobile Layout for screens less than 1106px
-        <div className="flex justify-between items-center bg-transparent relative z-30 px-6 py-4">
+        <div className="flex justify-between items-center bg-transparent relative z-30 px-2 py-2">
           {/* Left Side: Social Media Icons */}
           <div className="flex">
             <a
               href="https://x.com/wusle_official?s=21"
               target="_blank"
               rel="noopener noreferrer"
-              className="border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition"
+              className={`border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full items-center justify-center hover:text-black transition ${isWide ? "w-12 h-12" : "w-8 h-8"}`}
             >
               <FaXTwitter className="text-[#9c23d5] text-2xl" />
             </a>
-            {/* <a
-              href="https://www.instagram.com/wusle_official/#"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition ml-2"
-            >
-              <FaInstagram className="text-[#9c23d5] text-2xl" />
-            </a> */}
+
+            {isWide && (
+                <a
+                href="https://www.instagram.com/wusle_official/#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition ml-2"
+              >
+                <FaInstagram className="text-[#9c23d5] text-2xl" />
+              </a>
+            )}
+
           </div>
 
           {/* Center: Main Nav or Hamburger */}
@@ -116,13 +124,13 @@ const Navbar: React.FC = () => {
                 className="text-white text-xl focus:outline-none ml-2"
               >
                 <div className="border-4 border-[#9c23d5] bg-white rounded-full cursor-pointer hover:text-black transition">
-                  <Image
-                    src={Logo}
-                    alt="Logo"
-                    width={40}
-                    height={40}
-                    className="rounded-full my-2"
-                  />
+                <Image
+                  src={Logo}
+                  alt="Logo"
+                  width={isWide ? 40 : 20}
+                  height={isWide ? 40 : 20}
+                  className="rounded-full my-2 mx-1"
+                />
                 </div>
               </button>
             </div>
@@ -180,21 +188,21 @@ const Navbar: React.FC = () => {
                       borderRadius: "50px",
                       cursor: "pointer",
                       transition: "all 0.3s ease-in-out",
-                      marginLeft:'100px',
-                      // padding: "10px 30px",
+                      marginLeft:'130px',
+                      padding: "0px 15px",
                       textAlign: "center",
                       backgroundColor: "#fce2ff",
                     }}
                   >
-                    {connected ? <FaWallet className="text-purple-700 text-2xl" /> : <FaWallet className="text-2xl" />}
+                    {connected ? <FaWallet className="text-purple-700 text-2xl h-5 w-5" /> : <FaWallet className="text-2xl h-4 w-4" />}
                   </WalletMultiButton>
                 </div>
                 <div className="relative">
                   <button
                     onClick={() => setSliderOpen(!sliderOpen)}
-                    className="text-[#9c23d5] border-2 border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 flex items-center justify-center hover:text-black transition transform hover:scale-110"
+                    className={`text-[#9c23d5] border-2 border-[#9c23d5] bg-[#fce2ff] rounded-full flex items-center justify-center hover:text-black transition transform hover:scale-110 ${ isWide ? 'w-12 h-12' : 'w-8 h-8'}`}
                   >
-                    <FaBars className="text-xl" />
+                    <FaBars className={`text-xl  ${ isWide ? '' : 'h-4 w-4'}`} />
                   </button>
                   <AnimatePresence>
                     {sliderOpen && (
@@ -246,7 +254,7 @@ const Navbar: React.FC = () => {
                     borderRadius: "50px",
                     cursor: "pointer",
                     transition: "all 0.3s ease-in-out",
-                    padding: "10px 20px",
+                    padding: "5px 5px",
                     textAlign: "center",
                     backgroundColor: "#fce2ff",
                     border: "2px solid #9c23d5",

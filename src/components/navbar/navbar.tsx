@@ -98,14 +98,14 @@ const Navbar: React.FC = () => {
             >
               <FaXTwitter className="text-[#9c23d5] text-2xl" />
             </a>
-            <a
+            {/* <a
               href="https://www.instagram.com/wusle_official/#"
               target="_blank"
               rel="noopener noreferrer"
               className="border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition ml-2"
             >
               <FaInstagram className="text-[#9c23d5] text-2xl" />
-            </a>
+            </a> */}
           </div>
 
           {/* Center: Main Nav or Hamburger */}

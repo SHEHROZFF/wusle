@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 // Import your background image and Lottie JSON
 import FooterBg from "../../../assets/Images/FotterEarth.jpeg";
 import animationData from "../../../assets/Images/Faq.json";
+ import { useIsMobile } from "@/hooks/useIsMobile";
 
 // Dynamically load Lottie for SSR
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
@@ -77,6 +78,8 @@ const answerVariants = {
 const FAQSection: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
+  const isMobile = useIsMobile();
+
   const toggleFAQ = (index: number) => {
     setActiveIndex(activeIndex === index ? null : index);
   };
@@ -141,15 +144,15 @@ const FAQSection: React.FC = () => {
         viewport={{ once: true, amount: 0.3 }}
       >
         {/* Fancy Card with diagonal gradient + mild rotation on hover */}
-        <div className="relative  p-6 md:p-6 rounded-xl shadow-2xl border border-white/10  transition transform hover:-rotate-1 hover:scale-[1.01]">
+        <div className={`relative md:p-6 rounded-xl shadow-2xl   ${isMobile ? "" : "transition transform hover:-rotate-1 hover:scale-[1.01]"}`}>
           {/* Lottie Animation near Title */}
-          <div className="flex justify-center mb-6">
-            <div className="w-44 md:w-56">
+          <div className="flex justify-center">
+            <div className={`${isMobile ? "w-40 h-40" : "w-60 h-60"}`}>
               <Lottie animationData={animationData} loop={true} />
             </div>
           </div>
           {/* Title */}
-          <h2 className="text-3xl md:text-5xl font-bold text-center text-white mb-6 drop-shadow-sm">
+          <h2 className={` font-bold text-center text-white mb-6 drop-shadow-sm ${isMobile ? "text-xl" : "md:text-5xl"}`}>
             Your Burning Questions, Answered
           </h2>
 
@@ -163,18 +166,18 @@ const FAQSection: React.FC = () => {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
-                className={`bg-purple-600 bg-opacity-80 backdrop-blur-md  p-2 border border-white/100 text-left ${activeIndex === index ? "rounded-3xl" : "rounded-full"}`}
+                className={`bg-purple-600 bg-opacity-80 backdrop-blur-md  p-2 border border-white/100 text-left ${activeIndex === index ? "rounded-3xl " : "rounded-full "} ${isMobile ? "text-sm" : "md:text-3xl w-3/4 mx-auto"}`}
               >
                 {/* Question button */}
                 <button
                   onClick={() => toggleFAQ(index)}
-                  className={`flex items-center justify-between w-full text-white font-semibold text-lg md:text-3xl focus:outline-none`} 
+                  className={`flex items-center justify-between w-full text-white font-semibold text-lg focus:outline-none ${isMobile ? "text-sm" : "md:text-3xl "}`} 
                 >
-                  <span className="mt-2 mx-11">{faq.question}</span>
+                  <span className={`${isMobile ? "mt-2 mx-6" : "mt-2 mx-11" }`}>{faq.question}</span>
                   <motion.span
                     animate={{ rotate: activeIndex === index ? 45 : 0 }}
                     transition={{ duration: 0.3 }}
-                    className="text-2xl font-extrabold  border-2 border-white/100 rounded-full w-12 h-12 flex items-center justify-center mt-2 mr-5"
+                    className={`text-2xl font-extrabold  border-2 border-white/100 rounded-full  flex items-center justify-center mt-2 mr-3 ${isMobile ? "w-8 h-8" : "w-10 h-10"}`}
                   >
                      + 
                   </motion.span>
@@ -184,7 +187,7 @@ const FAQSection: React.FC = () => {
                   variants={answerVariants}
                   initial="collapsed"
                   animate={activeIndex === index ? "expanded" : "collapsed"}
-                  className="overflow-hidden text-base md:text-lg leading-relaxed text-gray-100 mt-3 mx-11 font-semibold"
+                  className={`overflow-hidden  leading-relaxed text-gray-200 mt-3  font-semibold ${isMobile ? "mx-6 text-sm" : "mx-11 md:text-lg "}`}
                 >
                   <p>{faq.answer}</p>
                 </motion.div>

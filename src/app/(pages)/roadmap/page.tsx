@@ -14,35 +14,35 @@ const phases = [
   {
     title: "Brainstorming and Project Preparation",
     description:
-      "Preparing the foundation for HeartBitcoin, including initial ideas and feasibility analysis.",
+      "Preparing the foundation for Wusle Coin, including initial ideas and feasibility analysis.",
     quarter: "Q1 2024",
     image: Watch1,
   },
   {
     title: "Development Phase",
     description:
-      "Launching MVPs, smart contracts, and other technical milestones for HeartBitcoin.",
+      "Launching MVPs, smart contracts, and other technical milestones for Wusle Coin.",
     quarter: "Q2 2024",
     image: Watch2,
   },
   {
     title: "Presale and Token Launch",
     description:
-      "Introducing HeartBitcoin to early investors and launching the token.",
+      "Introducing Wusle Coin to early investors and launching the token.",
     quarter: "Q3 2024",
     image: Watch3,
   },
   {
     title: "Expansion and Community Building",
     description:
-      "Building partnerships and fostering a global community around HeartBitcoin.",
+      "Building partnerships and fostering a global community around Wusle Coin.",
     quarter: "Q3-Q4 2024",
     image: Watch4,
   },
   {
     title: "2025: Expansion and New Opportunities",
     description:
-      "Exploring new innovations and opportunities to expand HeartBitcoin's ecosystem.",
+      "Exploring new innovations and opportunities to expand Wusle Coin's ecosystem.",
     quarter: "2025",
     image: Watch1,
   },
@@ -78,7 +78,7 @@ export default function Roadmap() {
           Roadmap
         </h1>
         <p className="text-base md:text-xl text-purple-200 mt-2">
-          A detailed journey of HeartBitcoin's progress and milestones.
+          A detailed journey of Wusle Coin's progress and milestones.
         </p>
       </motion.div>
 

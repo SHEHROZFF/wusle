@@ -12,6 +12,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import LoginModal from "@/components/LoginModal";
 import PurchaseHistoryModal from "@/components/PurchaseHistoryModal";
 import { FaBars, FaSignInAlt } from "react-icons/fa";
+import { useIsWide } from "@/hooks/useIsWide";
 
 const links = [
   { href: "#home", label: "Home" },
@@ -28,6 +29,8 @@ const Navbar: React.FC = () => {
   const [sliderOpen, setSliderOpen] = useState(false); // right side slider
   const [showHistory, setShowHistory] = useState(false); // purchase history modal
 
+  const isWide = useIsWide(480)
+
   // Split nav links into left and right groups
   const half = Math.ceil(links.length / 2);
   const leftLinks = links.slice(0, half);
@@ -35,16 +38,16 @@ const Navbar: React.FC = () => {
 
   // Mobile detection: treat screens less than 1106px as mobile
   const [isMobile, setIsMobile] = useState(false);
-  const [isWide, setIsWide] = useState(false);
+  // const [isWide, setIsWide] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1220);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-  useEffect(() => {
-    setIsWide(window.innerWidth > 480);
-  }, []);
+  // useEffect(() => {
+  //   setIsWide(window.innerWidth > 480);
+  // }, []);
 
   // Logout handler (redirects to home after logout)
   const handleLogout = () => {

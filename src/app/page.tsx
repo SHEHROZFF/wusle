@@ -14,28 +14,36 @@ import { useIsMobile } from "@/hooks/useIsMobile"; // adjust the import path as 
 import { useSession } from "next-auth/react";
 
 export default function Page() {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(768);
+  const isSmallMobile = useIsMobile(700);
   const { data: session } = useSession();
 
   return (
     <>
-      <div id="home" className="h-screen overflow-x-hidden">
+      <div id="home" className={`${isMobile ? "h-[130vh]" : "h-screen"} overflow-x-hidden`}>
         <Navbar />
         <Home />
-        {isMobile ? (
+        {/* {isMobile ? (
           // Mobile-specific positioning/styling
           <div className={`absolute w-[100%]  left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${session?.user ? "top-[85%]" : "top-[79%]"}`}>
             <PresaleInterface />
           </div>
         ) : (
           // Desktop-specific positioning/styling
-          <div className="absolute w-[80%] top-[73%] left-[48.5%] transform -translate-x-1/2 -translate-y-1/2 mt-10">
+          <div className="absolute w-[80%] top-[73%] left-[48.5%] transform -translate-x-1/2 -translate-y-1/3 mt-10 z-50">
             <PresaleInterface />
           </div>
-        )}
+        )} */}
       </div>
-      <div id="about" className="overflow-x-hidden mt-60">
+      <div id="about" className={`overflow-x-hidden ${
+          isMobile ? (isSmallMobile ? "mt-[20rem]" : "mt-[30rem]") : "mt-[37rem]"
+        }`}
+        >
+        <div className="z-50">
         <Marquee />
+
+        </div>
+
         <HeartSteps />
         <Marquee />
         <AboutPage />

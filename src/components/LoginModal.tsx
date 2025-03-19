@@ -86,7 +86,7 @@ export default function LoginModal({ show, onClose }: Props) {
       <AnimatePresence>
         {show && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0  flex items-center justify-center bg-black/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -102,6 +102,7 @@ export default function LoginModal({ show, onClose }: Props) {
               transition={{ duration: 0.4, ease: "easeOut" }}
               // The "teeth" border is done via clip-path
               className="
+                presale-card 
                 relative
                 p-6
                 w-full
@@ -113,21 +114,7 @@ export default function LoginModal({ show, onClose }: Props) {
                 flex flex-col
                 overflow-hidden
                 shadow-2xl
-                [clip-path:polygon(
-                  0% 0%, 
-                  100% 0%, 
-                  100% 90%, 
-                  90% 80%, 
-                  80% 90%, 
-                  70% 80%, 
-                  60% 90%, 
-                  50% 80%, 
-                  40% 90%, 
-                  30% 80%, 
-                  20% 90%, 
-                  10% 80%, 
-                  0% 90%
-                )]
+                
               "
               onClick={(e) => e.stopPropagation()}
             >
@@ -150,12 +137,12 @@ export default function LoginModal({ show, onClose }: Props) {
                 />
               </div>
 
-              <h2 className="text-3xl font-extrabold text-center mb-4">
+              <h2 className="fontFamily text-3xl  text-center mb-4">
                 {isSignUp ? "Create Account" : "Welcome Back"}
               </h2>
 
               {/* Some short text */}
-              <p className="text-center text-md font-sans text-gray-200 mb-4">
+              <p className="fontFamilyText text-center text-md font-sans text-gray-200 mb-4">
               Track your heart health, earn Wusle Coins, and unlock rewards! Stay fit, get rewarded—because every heartbeat counts.❤️
               </p>
 
@@ -163,6 +150,7 @@ export default function LoginModal({ show, onClose }: Props) {
               {isSignUp && (
                 <input
                   className="
+                    fontFamilyText
                     rounded-md mb-2 p-3
                     bg-white/20 focus:bg-white/30
                     placeholder-gray-200
@@ -176,6 +164,7 @@ export default function LoginModal({ show, onClose }: Props) {
 
               <input
                 className="
+                  fontFamilyText
                   rounded-md mb-2 p-3
                   bg-white/20 focus:bg-white/30
                   placeholder-gray-200
@@ -188,6 +177,7 @@ export default function LoginModal({ show, onClose }: Props) {
               />
               <input
                 className="
+                  fontFamilyText
                   rounded-md mb-4 p-3
                   bg-white/20 focus:bg-white/30
                   placeholder-gray-200
@@ -205,8 +195,8 @@ export default function LoginModal({ show, onClose }: Props) {
                 whileTap={{ scale: 0.97 }}
                 onClick={isSignUp ? handleSignUp : handleSignIn}
                 className="
+                  fontFamily
                   mb-3 py-3 px-5
-                  font-bold
                   bg-purple-600 hover:bg-purple-700
                   rounded-full
                   transition-colors duration-300
@@ -221,8 +211,9 @@ export default function LoginModal({ show, onClose }: Props) {
                 whileTap={{ scale: 0.97 }}
                 onClick={handleGoogleSignIn}
                 className="
+                fontFamily
                   mb-4 py-3 px-5
-                  font-bold
+                  
                   rounded-full
                   transition-colors duration-300
                   flex items-center justify-center
@@ -252,7 +243,7 @@ export default function LoginModal({ show, onClose }: Props) {
               {!isSignUp && (
                 <div className="text-right -mt-3">
                   <button
-                    className="text-sm font-bold text-purple-300 hover:text-purple-400"
+                    className="fontFamilyText text-sm  text-purple-300 hover:text-purple-400"
                     onClick={() => setShowForgot(true)}
                   >
                     Forgot Password?
@@ -261,7 +252,7 @@ export default function LoginModal({ show, onClose }: Props) {
               )}
 
               {/* Toggle between Sign In & Sign Up */}
-              <div className="text-center text-sm font-bold mt-6">
+              <div className="fontFamily text-center text-sm mt-6">
                 {isSignUp ? (
                   <>
                     Already have an account?{" "}
@@ -277,7 +268,7 @@ export default function LoginModal({ show, onClose }: Props) {
                     Don’t have an account?{" "}
                     <span
                       onClick={() => setIsSignUp(true)}
-                      className="text-[#d199eb] font-bold cursor-pointer hover:text-purple-500"
+                      className="fontFamilyText text-[#d199eb]  cursor-pointer hover:text-purple-500"
                     >
                       Sign Up
                     </span>

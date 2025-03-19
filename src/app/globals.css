@@ -63,3 +63,247 @@ html {
   animation: heartbeat 0.5s ease-in-out infinite;
 }
 
+.side-borders {
+  position: relative;        /* Needed for absolute positioning */
+  padding: 1.5rem 2rem;      /* Enough horizontal padding so text doesn't overlap borders */
+  border-radius: 0.5rem;     /* Rounded corners for the background box */
+  background-color: rgba(0, 0, 0, 0.4); /* Example semi-transparent bg */
+}
+
+/* Left border */
+.side-borders::before,
+.side-borders::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px; /* Border thickness */
+  border-radius: 0.5rem; /* Matches container’s corner rounding */
+  background: linear-gradient(
+    to bottom,
+    #f0f,      /* Start color (e.g., pinkish) */
+    #0ff       /* End color (e.g., aqua) */
+  );
+}
+
+/* Right border */
+.side-borders::before {
+  left: 0;
+}
+
+.side-borders::after {
+  right: 0;
+}
+
+
+.ultra {
+  font-family: "Super Comic", "Arial", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  background: linear-gradient(90deg, #e9a595, #feb47b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.TokenomicsHeading {
+  font-family: "Super Comic", "Arial", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  background: linear-gradient(90deg, #e9a595, #feb47b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.fontFamily {
+  font-family:  "Super Comic", "Arial", sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.05;
+}
+
+.fontFamilyText {
+  font-family:  "Nunito", "Arial", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05;
+}
+
+.FaqHeading {
+  font-family: "Super Comic", "Arial", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  /* letter-spacing: 0.10em; */
+  background: linear-gradient(90deg, #ffffff, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /* Optional: add drop shadow for extra pop */
+  /* text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1); */
+}
+
+.roadmap-heading {
+  font-family: "Super Comic", "Arial", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  background: linear-gradient(90deg, #ffffff, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+/* .custom-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(128, 0, 128, 0.4), rgba(75, 0, 130, 0.7));
+  backdrop-filter: blur(6px);
+  padding: 2rem;
+  overflow: hidden;
+  margin: auto;
+  transition: transform 0.3s ease;
+
+
+  clip-path: polygon(
+
+    0% 8%, 5% 0%, 10% 8%, 15% 0%, 20% 8%, 25% 0%, 30% 8%, 35% 0%, 40% 8%, 45% 0%, 
+    50% 8%, 55% 0%, 60% 8%, 65% 0%, 70% 8%, 75% 0%, 80% 8%, 85% 0%, 90% 8%, 95% 0%, 100% 8%,
+
+    100% 25%, 96% 30%, 100% 50%, 96% 55%, 100% 75%,
+
+
+    95% 100%, 90% 92%, 85% 100%, 80% 92%, 75% 100%, 70% 92%, 65% 100%, 60% 92%, 
+    55% 100%, 50% 92%, 45% 100%, 40% 92%, 35% 100%, 30% 92%, 25% 100%, 20% 92%, 
+    15% 100%, 10% 92%, 5% 100%, 0% 92%,
+
+
+    0% 75%, 4% 70%, 0% 50%, 4% 45%, 0% 25%
+  );
+} */
+
+.bgStunColor {
+  background: linear-gradient(135deg, rgba(128, 0, 128, 0.9), rgba(75, 0, 130, 0.7));
+}
+
+.bgStunColor2 {
+  background: linear-gradient(135deg, rgba(34, 34, 34, 0.6), rgba(68, 68, 68, 0.3));
+}
+
+  
+.custom-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(128, 0, 128, 0.9), rgba(75, 0, 130, 0.7));
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+
+  clip-path: polygon(
+    /* Top Edge - Flatter Tattered */
+    0% 4%, 5% 0%, 10% 4%, 15% 0%, 20% 4%, 25% 0%, 30% 4%, 35% 0%, 40% 4%, 45% 0%, 
+    50% 4%, 55% 0%, 60% 4%, 65% 0%, 70% 4%, 75% 0%, 80% 4%, 85% 0%, 90% 4%, 95% 0%, 100% 4%,
+
+    /* Right Edge - Straight */
+    100% 96%,
+
+    /* Bottom Edge - Flatter Tattered */
+    95% 100%, 90% 96%, 85% 100%, 80% 96%, 75% 100%, 70% 96%, 65% 100%, 60% 96%, 
+    55% 100%, 50% 96%, 45% 100%, 40% 96%, 35% 100%, 30% 96%, 25% 100%, 20% 96%, 
+    15% 100%, 10% 96%, 5% 100%, 0% 96%,
+
+    /* Left Edge - Straight */
+    0% 4%
+  );
+}
+
+/* .presale-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(128, 0, 128, 0.9), rgba(75, 0, 130, 0.5));
+  overflow: hidden;
+  transition: transform 0.3s ease;
+
+  clip-path: polygon(
+    0% 4%, 5% 0%, 10% 4%, 15% 0%, 20% 4%, 25% 0%, 30% 4%, 35% 0%, 40% 4%, 45% 0%, 
+    50% 4%, 55% 0%, 60% 4%, 65% 0%, 70% 4%, 75% 0%, 80% 4%, 85% 0%, 90% 4%, 95% 0%, 100% 4%,
+
+    100% 96%,
+
+    95% 100%, 90% 96%, 85% 100%, 80% 96%, 75% 100%, 70% 96%, 65% 100%, 60% 96%, 
+    55% 100%, 50% 96%, 45% 100%, 40% 96%, 35% 100%, 30% 96%, 25% 100%, 20% 96%, 
+    15% 100%, 10% 96%, 5% 100%, 0% 96%,
+
+    0% 4%
+  );
+} */
+
+
+.presale-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(128, 0, 128, 0.95), rgba(75, 0, 130, 0.6));
+  overflow: hidden;
+  transition: transform 0.3s ease;
+
+  clip-path: polygon(
+    /* Top Edge - Straight */
+    0% 0%, 100% 0%,
+
+    /* Right Edge - Tattered Sophistication */
+    100% 5%, 98% 10%, 100% 15%, 98% 20%, 100% 25%, 98% 30%, 100% 35%, 98% 40%, 
+    100% 45%, 98% 50%, 100% 55%, 98% 60%, 100% 65%, 98% 70%, 100% 75%, 98% 80%, 
+    100% 85%, 98% 90%, 100% 95%, 100% 100%,
+
+    /* Bottom Edge - Straight */
+    0% 100%,
+
+    /* Left Edge - Tattered Sophistication */
+    0% 95%, 2% 90%, 0% 85%, 2% 80%, 0% 75%, 2% 70%, 0% 65%, 2% 60%, 
+    0% 55%, 2% 50%, 0% 45%, 2% 40%, 0% 35%, 2% 30%, 0% 25%, 2% 20%, 
+    0% 15%, 2% 10%, 0% 5%, 0% 0%
+  );
+}
+
+
+
+.custom-card:hover {
+  transform: scale(1.05);
+}
+
+.custom-card-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+}
+
+/* @media (min-width: 640px) {
+  .custom-card-heading {
+    font-size: 2rem;
+  }
+} */
+
+/* .custom-card-text {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+} */
+
+/* @media (min-width: 640px) {
+  .custom-card-text {
+    font-size: 1.125rem;
+  }
+} */
+
+/* .custom-card-quarter {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: rgba(75, 0, 130, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+} */
+
+/* @media (min-width: 640px) {
+  .custom-card-quarter {
+    font-size: 1rem;
+  }
+} */

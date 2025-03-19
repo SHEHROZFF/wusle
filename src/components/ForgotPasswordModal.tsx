@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from 'react-dom';
 
 interface ForgotPasswordModalProps {
   show: boolean;
@@ -127,11 +128,12 @@ export default function ForgotPasswordModal({ show, onClose }: ForgotPasswordMod
 
   if (!show) return null;
 
-  return (
+  return createPortal(
+
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0  flex items-center justify-center bg-black/70 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -145,6 +147,7 @@ export default function ForgotPasswordModal({ show, onClose }: ForgotPasswordMod
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="
+              presale-card 
               relative
               p-6
               w-full
@@ -156,21 +159,6 @@ export default function ForgotPasswordModal({ show, onClose }: ForgotPasswordMod
               flex flex-col
               overflow-hidden
               shadow-2xl
-              [clip-path:polygon(
-                0% 0%, 
-                100% 0%, 
-                100% 90%, 
-                90% 80%, 
-                80% 90%, 
-                70% 80%, 
-                60% 90%, 
-                50% 80%, 
-                40% 90%, 
-                30% 80%, 
-                20% 90%, 
-                10% 80%, 
-                0% 90%
-              )]
               hover:scale-[1.005]
               transition-transform
               duration-300
@@ -212,14 +200,16 @@ export default function ForgotPasswordModal({ show, onClose }: ForgotPasswordMod
 
             {/* status message */}
             {status && (
-              <div className="mt-3 text-sm text-center px-2">
+              <div className="fontFamilyText mt-3 text-sm text-center px-2">
                 {status}
               </div>
             )}
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+
+    document.body
   );
 }
 
@@ -235,15 +225,16 @@ function Step1({
 }) {
   return (
     <>
-      <h2 className="text-3xl font-extrabold text-center mb-4">
+      <h2 className="fontFamily text-3xl  text-center mb-4">
         Forgot Password
       </h2>
-      <p className="text-center text-sm text-gray-200 mb-4">
+      <p className="fontFamilyText text-center text-sm text-gray-200 mb-4">
         Enter your email, and we'll send you a 6-digit code.
       </p>
 
       <input
         className="
+        fontFamilyText
           w-full
           rounded-md
           mb-3 p-3
@@ -263,6 +254,7 @@ function Step1({
         whileTap={{ scale: 0.97 }}
         onClick={handleRequestOtp}
         className="
+        fontFamily
           w-full
           py-3 px-5
           font-bold
@@ -290,10 +282,10 @@ function Step2({
 }) {
   return (
     <>
-      <h2 className="text-2xl font-extrabold text-center mb-4">
+      <h2 className="fontFamily text-2xl text-center mb-4">
         Verify OTP
       </h2>
-      <p className="text-center text-sm text-gray-200 mb-4">
+      <p className="fontFamilyText text-center text-sm text-gray-200 mb-4">
         A 6-digit code was sent to <b>{email}</b>.
       </p>
 
@@ -305,6 +297,7 @@ function Step2({
             type="text"
             maxLength={1}
             className="
+            fontFamilyText
               w-10 h-10
               bg-white/20
               focus:bg-white/30
@@ -337,15 +330,16 @@ function Step3({
 }) {
   return (
     <>
-      <h2 className="text-2xl font-extrabold text-center mb-4">
+      <h2 className="fontFamily text-2xl font-extrabold text-center mb-4">
         Reset Password
       </h2>
-      <p className="text-center text-sm text-gray-200 mb-4">
+      <p className="fontFamilyText text-center text-sm text-gray-200 mb-4">
         Enter your new password below.
       </p>
 
       <input
         className="
+        fontFamilyText
           w-full
           rounded-md
           mb-3 p-3
@@ -365,6 +359,7 @@ function Step3({
         whileTap={{ scale: 0.97 }}
         onClick={handleResetPassword}
         className="
+        fontFamily
           w-full
           py-3 px-5
           font-bold

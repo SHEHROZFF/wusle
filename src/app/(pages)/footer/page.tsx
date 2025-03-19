@@ -42,19 +42,19 @@ const Footer: React.FC = () => {
       >
         {["ABOUT", "DOCS", "TERMS", "SOCIALS"].map((title) => (
           <motion.div key={title} variants={fadeIn}>
-            <h3 className="font-extrabold mb-4 text-xl border-b border-white/20 pb-2">
+            <h3 className="fontFamily mb-4 text-xl border-b border-white/20 pb-2">
               {title}
             </h3>
             <ul className="space-y-1">
               {title === "ABOUT" && (
                 <>
                   <li>
-                    <a href="#" className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold">
+                    <a href="#" className=" inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110 fontFamily ">
                       Tokenomics
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold">
+                    <a href="#" className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily">
                       How to Buy
                     </a>
                   </li>
@@ -65,7 +65,7 @@ const Footer: React.FC = () => {
                   <li>
                     <a
                       href="/Wusle_Audit.pdf"
-                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold"
+                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily"
                       download
                     >
                       Audit
@@ -76,14 +76,14 @@ const Footer: React.FC = () => {
               {title === "TERMS" && (
                 <>
                   <li>
-                    <a href="#" className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold">
+                    <a href="#" className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily">
                       Cookies Policy
                     </a>
                   </li>
                   <li>
                     <a
                       href="/Wusle_privacy_policy.pdf"
-                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold"
+                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily"
                       download
                     >
                       Privacy Policy
@@ -92,7 +92,7 @@ const Footer: React.FC = () => {
                   <li>
                     <a
                       href="/Wusle_Terms_and_Condition.pdf"
-                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold"
+                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily"
                       download
                     >
                       Terms of Use
@@ -105,7 +105,7 @@ const Footer: React.FC = () => {
                   <li>
                     <a
                       href="https://www.instagram.com/wusle_official/"
-                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold"
+                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily"
                     >
                       Instagram
                     </a>
@@ -113,7 +113,7 @@ const Footer: React.FC = () => {
                   <li>
                     <a
                       href="https://x.com/wusle_official?s=21"
-                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  font-semibold"
+                      className="inline-block text-white hover:text-purple-300 transition-colors transform hover:scale-110  fontFamily"
                     >
                       X
                     </a>
@@ -127,7 +127,7 @@ const Footer: React.FC = () => {
 
       {/* Disclaimer and Action Buttons */}
       <motion.div
-        className="mt-12 relative z-10 text-sm text-gray-300 text-center space-y-4"
+        className="mt-12 relative z-10 fontFamily text-sm text-gray-300 text-center space-y-4"
         variants={fadeIn}
       >
         <p className="max-w-2xl mx-auto">
@@ -161,7 +161,7 @@ const Footer: React.FC = () => {
         ) : (
           <button
             onClick={() => setShowLogin(true)}
-            className="mt-4 font-bold text-black bg-white px-6 py-3 rounded-full shadow-lg hover:shadow-2xl transition transform hover:scale-105"
+            className="mt-4 fontFamily text-black bg-white px-6 py-3 rounded-full shadow-lg hover:shadow-2xl transition transform hover:scale-105"
           >
             LOGIN
           </button>
@@ -169,7 +169,7 @@ const Footer: React.FC = () => {
       </motion.div>
 
       {/* Futuristic animated SVG divider */}
-      <svg
+      {/* <svg
         className="absolute bottom-0 left-0 w-full"
         viewBox="0 0 1440 320"
         preserveAspectRatio="none"
@@ -187,8 +187,27 @@ const Footer: React.FC = () => {
           animate={{ pathLength: 1 }}
           transition={{ duration: 2, ease: "easeInOut" }}
         />
+      </svg> */}
+      <svg
+        className="absolute bottom-0 left-0 w-full"
+        viewBox="0 0 1440 300"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id="footerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#8e44ad" />
+            <stop offset="100%" stopColor="#c39bd3" />
+          </linearGradient>
+        </defs>
+        <motion.path
+          fill="url(#footerGradient)"
+          d="M0,64L48,58.7C96,53,192,43,288,42.7C384,43,480,53,576,90.7C672,128,768,192,864,213.3C960,235,1056,213,1152,186.7C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 2, ease: "easeInOut" }}
+        />
       </svg>
-
+ 
       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
     </footer>
   );

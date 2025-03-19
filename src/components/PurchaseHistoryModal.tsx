@@ -73,15 +73,15 @@ const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({ show, onClo
           {/* Click outside to close */}
           <div className="absolute inset-0" onClick={onClose}></div>
           <motion.div
-            className="relative p-6 w-full max-w-3xl bg-gradient-to-br from-[#5b0396]/70 to-[#8e31c5]/70 rounded-lg shadow-2xl z-10 overflow-y-auto max-h-full scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-gray-800 [clip-path:polygon(0% 0%, 100% 0%, 100% 85%, 90% 100%, 10% 100%, 0% 85%)]"
+            className="presale-card relative p-6 w-full max-w-3xl bg-gradient-to-br from-[#5b0396]/70 to-[#8e31c5]/70 rounded-lg shadow-2xl z-10 overflow-y-auto max-h-full scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-gray-800 [clip-path:polygon(0% 0%, 100% 0%, 100% 85%, 90% 100%, 10% 100%, 0% 85%)]"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
             exit="hidden"
           >
-            <div
+            {/* <div
               className="absolute inset-0 bg-[url('/wusle.jpg')] bg-center bg-current bg-no-repeat opacity-10 pointer-events-none rounded-full"
-            />
+            /> */}
 
             <button
               onClick={onClose}
@@ -91,15 +91,15 @@ const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({ show, onClo
             </button>
             {!selectedSlip ? (
               <>
-                <h2 className="text-4xl font-extrabold mb-6 text-center uppercase tracking-wide text-white drop-shadow-lg">
+                <h2 className="fontFamily text-white text-4xl mb-6 text-center uppercase ">
                   Epic Purchase History
                 </h2>
                 {loading ? (
-                  <p className="text-center text-white text-lg">
+                  <p className="fontFamilyText text-center text-white text-lg">
                     Loading your mystical receipts...
                   </p>
                 ) : error ? (
-                  <p className="text-center text-red-400 text-lg">{error}</p>
+                  <p className="fontFamilyText text-center text-red-400 text-lg">{error}</p>
                 ) : slips.length === 0 ? (
                   <p className="text-center text-white text-lg">
                     No legendary purchase history found.
@@ -114,21 +114,21 @@ const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({ show, onClo
                       >
                         <div>
                           <p className="text-sm text-gray-300">
-                            <span className="font-semibold text-white">Slip:</span>{" "}
+                            <span className="fontFamilyText text-white">Slip:</span>{" "}
                             {slip.id}
                           </p>
                           <p className="text-sm text-gray-300">
-                            <span className="font-semibold text-white">Date:</span>{" "}
+                            <span className="fontFamilyText text-white">Date:</span>{" "}
                             {slip.createdAt ? format(new Date(slip.createdAt), "PPpp") : "N/A"}
                           </p>
                           <p className="text-sm text-gray-300">
-                            <span className="font-semibold text-white">Amount:</span>{" "}
+                            <span className="fontFamilyText text-white">Amount:</span>{" "}
                             {slip.amountPaid} {slip.currency}
                           </p>
                         </div>
                         <Button
                           onClick={() => setSelectedSlip(slip)}
-                          className="px-4 py-2 bg-pink-700 hover:bg-pink-600 text-white rounded-md"
+                          className="fontFamilyText px-4 py-2 bg-pink-700 hover:bg-pink-600 text-white rounded-md"
                         >
                           View Details
                         </Button>

@@ -10,7 +10,13 @@ import { useSession, signOut } from "next-auth/react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import LoginModal from "@/components/LoginModal";
-import PurchaseHistoryModal from "@/components/PurchaseHistoryModal";
+import dynamic from "next/dynamic";
+
+const PurchaseHistoryModal = dynamic(
+  () => import("@/components/PurchaseHistoryModal"),
+  { ssr: false }
+);
+
 import { FaBars, FaSignInAlt } from "react-icons/fa";
 import { useIsWide } from "@/hooks/useIsWide";
 

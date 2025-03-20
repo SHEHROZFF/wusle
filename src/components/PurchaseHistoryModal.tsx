@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import ReceiptModal from "./ReceiptModal";
+import { createPortal } from "react-dom";
 
 interface SlipData {
   id: string;
@@ -60,7 +61,7 @@ const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({ show, onClo
     visible: { scale: 1, opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {show && (
         <motion.div
@@ -143,7 +144,8 @@ const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({ show, onClo
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

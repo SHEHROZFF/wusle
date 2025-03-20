@@ -35,15 +35,9 @@ export default function Page() {
           </div>
         )} */}
       </div>
-      <div id="about" className={`overflow-x-hidden ${
-          isMobile ? (isSmallMobile ? "mt-[20rem]" : "mt-[30rem]") : "mt-[37rem]"
-        }`}
+      <div id="about" className={`overflow-x-hidden ${isMobile ? "mt-40" : "mt-60"}`}
         >
-        <div className="z-50">
         <Marquee />
-
-        </div>
-
         <HeartSteps />
         <Marquee />
         <AboutPage />

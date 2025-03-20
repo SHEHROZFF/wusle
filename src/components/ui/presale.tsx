@@ -1,3 +1,761 @@
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import Image from "next/image";
+// import { useSession } from "next-auth/react";
+// import dynamic from "next/dynamic";
+
+// import { useWallet } from "@solana/wallet-adapter-react";
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+
+// /* ----------- Solana + SPL imports ----------- */
+// import {
+//   Connection,
+//   SystemProgram,
+//   Transaction,
+//   PublicKey,
+//   LAMPORTS_PER_SOL,
+// } from "@solana/web3.js";
+
+// import {
+//   getAssociatedTokenAddress,
+//   createTransferInstruction,
+//   createAssociatedTokenAccountInstruction,
+//   TOKEN_PROGRAM_ID,
+// } from "@solana/spl-token";
+
+// /* ----------- Ethers v6 imports ----------- */
+// import { BrowserProvider, parseEther } from "ethers";
+
+// /* ----------- Local assets & hooks ----------- */
+// import Usdt from "../../assets/Images/usdt.png";
+// import Sol from "../../assets/Images/sol.png";
+// import Ether from "../../assets/Images/eth.webp"; // ETH logo
+// import Wusle from "../../assets/Images/logo.jpeg";
+// import { useIsMobile } from "@/hooks/useIsMobile";
+
+// /* ----------- Our components ----------- */
+// import LoginModal from "@/components/LoginModal";
+// const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+// import lottieAnimation from "@/assets/Images/wave.json";
+// import ReceiptModal from "../ReceiptModal";
+
+// /* --------------- Types --------------- */
+// interface StageData {
+//   stageNumber: number;
+//   target: number;
+//   raised: number;
+//   startTime: string;
+//   endTime: string;
+//   rate: number;
+//   listingPrice: number;
+// }
+
+// interface PresaleAPIResponse {
+//   stages: StageData[];
+//   currentStage: number;
+//   endsAt: string;
+//   wusleRate: number;
+//   listingPrice: number;
+//   totalWusleSupply: string;
+//   liquidityAtLaunch: string;
+// }
+
+// interface Countdown {
+//   days: number;
+//   hours: number;
+//   minutes: number;
+//   seconds: number;
+// }
+
+// interface SlipData {
+//   id: string;
+//   userId: string;
+//   walletAddress: string;
+//   currency: string;
+//   amountPaid: number;
+//   wuslePurchased: number;
+//   redeemCode: string;
+//   createdAt: string;
+// }
+
+// export default function PresaleInterface() {
+//   const { data: session } = useSession();
+
+//   // Solana wallet
+//   const { publicKey, connected: solanaConnected, sendTransaction } = useWallet();
+
+//   // Ethereum wallet states
+//   const [ethAddress, setEthAddress] = useState("");
+//   const [connectedEth, setConnectedEth] = useState(false);
+
+//   const isMobile6 = useIsMobile(475);
+
+//   // Presale data
+//   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
+
+//   // UI states
+//   const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//   const [progress, setProgress] = useState(0);
+//   const [amount, setAmount] = useState("");
+//   const [selectedCurrency, setSelectedCurrency] = useState<"USDT" | "SOL" | "ETH">("USDT");
+//   const [wusleAmount, setWusleAmount] = useState(0);
+//   const [showLogin, setShowLogin] = useState(false);
+//   const [showReceipt, setShowReceipt] = useState(false);
+//   const [slip, setSlip] = useState<SlipData | null>(null);
+//   const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(null);
+
+//   /* ---------------- Fetch user stats if logged in ---------------- */
+//   async function refreshUserStats() {
+//     try {
+//       const res = await fetch("/api/user");
+//       const data = await res.json();
+//       if (res.ok) {
+//         setUserStats(data);
+//       } else {
+//         console.error("Error fetching user stats:", data.error);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching user stats:", error);
+//     }
+//   }
+
+//   useEffect(() => {
+//     if (session?.user) refreshUserStats();
+//   }, [session]);
+
+//   /* ---------------- Fetch Presale data from your backend ---------------- */
+//   useEffect(() => {
+//     async function fetchPresale() {
+//       try {
+//         const res = await fetch("/api/presale");
+//         const data = await res.json();
+//         if (res.ok) {
+//           setPresaleData(data);
+//         } else {
+//           console.error("Failed to load presale data:", data.error);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching presale data:", err);
+//       }
+//     }
+
+//     fetchPresale();
+//     // If you want to re-fetch periodically:
+//     // const interval = setInterval(fetchPresale, 30000);
+//     // return () => clearInterval(interval);
+//   }, []);
+
+//   /* ---------------- Update progress bar from presale data ---------------- */
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const { stages, currentStage } = presaleData;
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) {
+//       setProgress(0);
+//       return;
+//     }
+
+//     let sumCompleted = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) sumCompleted += st.target;
+//     }
+//     const totalRaisedSoFar = sumCompleted + active.raised;
+//     const frac = (totalRaisedSoFar / totalCap) * 100;
+//     setProgress(Math.min(Math.max(frac, 0), 100));
+//   }, [presaleData]);
+
+//   /* ---------------- Countdown timer for presale end ---------------- */
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const endsAt = new Date(presaleData.endsAt).getTime();
+
+//     const timer = setInterval(() => {
+//       const now = Date.now();
+//       const diff = endsAt - now;
+//       if (diff <= 0) {
+//         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//       } else {
+//         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+//         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+//         const m = Math.floor((diff / (1000 * 60)) % 60);
+//         const s = Math.floor((diff / 1000) % 60);
+//         setCountdown({ days: d, hours: h, minutes: m, seconds: s });
+//       }
+//     }, 1000);
+
+//     return () => clearInterval(timer);
+//   }, [presaleData]);
+
+//   /* ---------------- Calculate WUSLE from user input for any currency ---------------- */
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const rate = presaleData.wusleRate || 0.0037;
+//     const val = parseFloat(amount || "0") / rate;
+//     setWusleAmount(isNaN(val) ? 0 : val);
+//   }, [amount, presaleData]);
+
+//   /* ---------------- Stage Markers & total raised helper ---------------- */
+//   function getStageMarkers() {
+//     if (!presaleData) return [];
+//     const { stages, currentStage } = presaleData;
+//     if (!stages.length) return [];
+
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+//     let cumulative = 0;
+
+//     return stages.map((st) => {
+//       const pct = (cumulative / totalCap) * 100;
+//       cumulative += st.target;
+//       let status = "upcoming";
+//       if (st.stageNumber < currentStage) {
+//         status = "completed";
+//       } else if (st.stageNumber === currentStage) {
+//         status = "current";
+//       }
+//       return { pct, label: `${st.stageNumber}`, status };
+//     });
+//   }
+
+//   function stagesTotalRaisedSoFar() {
+//     if (!presaleData) return 0;
+//     const { stages, currentStage } = presaleData;
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) return 0;
+
+//     let completed = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) completed += st.target;
+//     }
+//     return completed + active.raised;
+//   }
+
+//   /* ---------------- Connect to ETH wallet using Ethers v6 (MetaMask) ---------------- */
+//   async function connectEthWallet() {
+//     try {
+//       if (!window.ethereum) {
+//         alert("MetaMask (or another web3 wallet) was not found in your browser.");
+//         return;
+//       }
+  
+//       // Request account access directly via the provider
+//       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+//       if (!accounts || !accounts.length) {
+//         throw new Error("No Ethereum accounts found.");
+//       }
+  
+//       // Now create Ethers v6 provider
+//       const provider = new BrowserProvider(window.ethereum);
+//       const signer = await provider.getSigner();
+//       const address = await signer.getAddress();
+  
+//       setEthAddress(address);
+//       setConnectedEth(true);
+//       console.log("ETH wallet connected:", address);
+//     } catch (err: any) {
+//       console.error("Error connecting ETH wallet:", err);
+//       alert(err.message || "Failed to connect Ethereum wallet.");
+//     }
+//   }
+  
+
+//   /* ---------------- Main Buy function for USDT / SOL (Solana) or ETH (Ethereum) ---------------- */
+//   async function handleBuyNow() {
+//     if (!session?.user) {
+//       alert("You must be logged in to buy.");
+//       return;
+//     }
+
+//     const paid = parseFloat(amount || "0");
+//     if (paid <= 0) {
+//       alert("Enter a valid amount to buy!");
+//       return;
+//     }
+
+//     // SOL or USDT => Use Solana approach
+//     if (selectedCurrency === "SOL" || selectedCurrency === "USDT") {
+//       if (!publicKey || !solanaConnected) {
+//         alert("Connect your Solana wallet first!");
+//         return;
+//       }
+
+//       try {
+//         const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+//         let txSignature = "";
+
+//         if (selectedCurrency === "SOL") {
+//           // --------------------- SOL Transfer ---------------------
+//           const receiverAddress = "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G"; // Your receiver SOL address
+//           const receiverPubkey = new PublicKey(receiverAddress);
+//           const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
+
+//           const transaction = new Transaction().add(
+//             SystemProgram.transfer({
+//               fromPubkey: publicKey,
+//               toPubkey: receiverPubkey,
+//               lamports,
+//             })
+//           );
+
+//           txSignature = await sendTransaction(transaction, connection);
+
+//           // Confirm the transaction
+//           const latestBlockHash = await connection.getLatestBlockhash();
+//           await connection.confirmTransaction({
+//             signature: txSignature,
+//             blockhash: latestBlockHash.blockhash,
+//             lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+//           });
+//           console.log("SOL devnet transaction confirmed:", txSignature);
+//         } else {
+//           // --------------------- USDT (SPL) Transfer ---------------------
+//           const USDT_MINT = new PublicKey("EVPcoys7wBBAEecUhAXPbjGiwjVgs8Zz3tbMijqqJxNm"); // devnet minted USDT
+//           const recipientPubkey = new PublicKey("Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G");
+
+//           // Associated Token Accounts
+//           const senderUsdtATA = await getAssociatedTokenAddress(USDT_MINT, publicKey);
+//           const recipientUsdtATA = await getAssociatedTokenAddress(USDT_MINT, recipientPubkey);
+
+//           // USDT typically 6 decimals
+//           const usdtDecimals = 6;
+//           const amountInSmallestUnits = Math.floor(paid * Math.pow(10, usdtDecimals));
+
+//           const transaction = new Transaction();
+
+//           // If recipient ATA doesn't exist, create it
+//           const recipientATAInfo = await connection.getAccountInfo(recipientUsdtATA);
+//           if (!recipientATAInfo) {
+//             transaction.add(
+//               createAssociatedTokenAccountInstruction(
+//                 publicKey,
+//                 recipientUsdtATA,
+//                 recipientPubkey,
+//                 USDT_MINT
+//               )
+//             );
+//           }
+
+//           // Transfer instruction
+//           transaction.add(
+//             createTransferInstruction(
+//               senderUsdtATA,
+//               recipientUsdtATA,
+//               publicKey,
+//               amountInSmallestUnits,
+//               [],
+//               TOKEN_PROGRAM_ID
+//             )
+//           );
+
+//           txSignature = await sendTransaction(transaction, connection);
+//           console.log("USDT devnet transaction signature:", txSignature);
+
+//           // Confirm
+//           const latestBlockHash = await connection.getLatestBlockhash();
+//           await connection.confirmTransaction({
+//             signature: txSignature,
+//             blockhash: latestBlockHash.blockhash,
+//             lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+//           });
+//           console.log("USDT devnet transaction confirmed:", txSignature);
+//         }
+
+//         // Once on-chain is confirmed, create your slip
+//         const res = await fetch("/api/slip/buy", {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({
+//             walletAddress: publicKey.toBase58(),
+//             currency: selectedCurrency,
+//             amountPaid: paid,
+//             wuslePurchased: wusleAmount,
+//             txSignature,
+//           }),
+//         });
+//         const data = await res.json();
+//         if (res.ok) {
+//           setSlip(data.slip);
+//           setShowReceipt(true);
+//         } else {
+//           alert(data.error || "Error creating slip");
+//         }
+//       } catch (err) {
+//         console.error("handleBuyNow (SOL/USDT) error:", err);
+//         alert("Error with SOL/USDT transaction or slip creation.");
+//       }
+//     }
+
+//     // ETH => Use Ethereum approach
+//     else if (selectedCurrency === "ETH") {
+//       if (!connectedEth || !ethAddress) {
+//         alert("Connect your ETH wallet first!");
+//         return;
+//       }
+
+//       try {
+//         // Use Ethers v6
+//         const provider = new BrowserProvider(window.ethereum);
+//         const signer = await provider.getSigner();
+
+//         // The address receiving ETH
+//         const receiverAddress = "0xF3A9E226CFbFa60Cdb3b30CbEfC7db120f82266d"; // replace with your own
+//         // Convert input amount to wei
+//         const txResponse = await signer.sendTransaction({
+//           to: receiverAddress,
+//           value: parseEther(amount), // parseEther from v6
+//         });
+
+//         console.log("ETH transaction sent:", txResponse.hash);
+
+//         // Wait for confirmation
+//         const receipt = await txResponse.wait();
+//         console.log("ETH transaction confirmed:", receipt.transactionHash);
+
+//         // Once on-chain confirmed, create slip
+//         const res = await fetch("/api/slip/buy", {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({
+//             walletAddress: ethAddress,
+//             currency: "ETH",
+//             amountPaid: paid,
+//             wuslePurchased: wusleAmount,
+//             txSignature: receipt.transactionHash,
+//           }),
+//         });
+//         const data = await res.json();
+//         if (res.ok) {
+//           setSlip(data.slip);
+//           setShowReceipt(true);
+//         } else {
+//           alert(data.error || "Error creating slip");
+//         }
+//       } catch (err: any) {
+//         console.error("handleBuyNow (ETH) error:", err);
+//         alert(err.message || "Error with ETH transaction or slip creation.");
+//       }
+//     }
+//   }
+
+//   /* ------------------------------ UI Render ------------------------------ */
+//   return (
+//     <div className="flex items-center justify-center min-h-screen p-4">
+//       <div className="relative w-full py-4 max-w-[600px] mx-auto bg-gradient-to-br from-purple-900 to-purple-500 rounded-lg transition-all duration-300">
+//         {/* Title / Stage Info */}
+//         <div className="text-center mt-2">
+//           <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//             $WUSLE PRESALE
+//           </h2>
+//           {presaleData && (
+//             <>
+//               <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//                 IS NOW LIVE!
+//               </h2>
+//               <h3 className="font-bold text-md sm:text-xl mt-1 text-white">
+//                 STAGE {presaleData.currentStage}/{presaleData.stages.length}
+//               </h3>
+//               <p className="text-xs sm:text-lg mt-4 text-gray-200">
+//                 Liquidity At Launch: {presaleData.liquidityAtLaunch} USDT
+//               </p>
+//             </>
+//           )}
+//         </div>
+
+//         {/* Countdown */}
+//         {presaleData ? (
+//           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-black mx-4 md:mx-8">
+//             {["days", "hours", "minutes", "seconds"].map((unit) => (
+//               <div key={unit} className="flex flex-col items-center">
+//                 <div className="bg-white/40 text-white rounded-lg hover:bg-white/20 transition flex flex-col items-center justify-center w-[70px] h-[60px] sm:w-[90px] sm:h-[70px] md:w-[100px] md:h-[80px] lg:w-[120px] lg:h-[100px]">
+//                   <span className="font-bold text-xl sm:text-2xl md:text-3xl">
+//                     {countdown[unit as keyof typeof countdown]}
+//                   </span>
+//                   <span className="text-white text-sm sm:text-base uppercase mt-2">
+//                     {unit === "days"
+//                       ? "Days"
+//                       : unit === "hours"
+//                       ? "Hrs"
+//                       : unit === "minutes"
+//                       ? "Mins"
+//                       : "Secs"}
+//                   </span>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         ) : (
+//           <p className="text-center text-white mt-2">Loading Presale Data...</p>
+//         )}
+
+//         {/* Progress & Stage Markers */}
+//         <div className="mt-4 px-2 sm:px-8">
+//           <div className="relative px-2">
+//             <div className="relative w-full h-8 mb-0">
+//               {presaleData &&
+//                 getStageMarkers().map((m, idx) => {
+//                   let arrowColor, textColor;
+//                   if (m.status === "completed") {
+//                     arrowColor = "border-t-green-500";
+//                     textColor = "text-green-500";
+//                   } else if (m.status === "current") {
+//                     arrowColor = "border-t-yellow-500";
+//                     textColor = "text-yellow-500";
+//                   } else {
+//                     arrowColor = "border-t-white";
+//                     textColor = "text-white";
+//                   }
+//                   return (
+//                     <div
+//                       key={idx}
+//                       className="absolute flex flex-col items-center"
+//                       style={{ left: `calc(${m.pct}% - 8px)` }}
+//                     >
+//                       <span className={`text-xs font-bold mb-1 ${textColor}`}>
+//                         {m.label}
+//                       </span>
+//                       <div
+//                         className={`${
+//                           isMobile6 ? "w-2 h-1" : "w-3 h-1"
+//                         } border-l-4 border-r-4 border-l-transparent border-r-transparent border-t-8 ${arrowColor}`}
+//                       />
+//                     </div>
+//                   );
+//                 })}
+//             </div>
+//             <div
+//               className={`w-full bg-white/20 rounded-full overflow-hidden ${
+//                 isMobile6 ? "h-5" : "h-4"
+//               }`}
+//             >
+//               <div
+//                 className="h-full bg-purple-200 rounded-full transition-all duration-300"
+//                 style={{ width: `${progress}%` }}
+//               />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* WUSLE Sold / USDT Raised */}
+//         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">
+//               WUSLE SOLD
+//             </span>
+//             <span className="text-white text-xs sm:text-base md:text-md lg:text-lg">
+//               {presaleData
+//                 ? (
+//                     stagesTotalRaisedSoFar() /
+//                     (presaleData.wusleRate || 0.0037)
+//                   ).toLocaleString(undefined, { maximumFractionDigits: 0 })
+//                 : 0}{" "}
+//               / {presaleData ? presaleData.totalWusleSupply : 0}
+//             </span>
+//           </div>
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-xs sm:text-sm md:text-sm">
+//               USDT RAISED
+//             </span>
+//             <span className="text-white text-xs sm:text-sm md:text-sm lg:text-lg">
+//               ${presaleData ? stagesTotalRaisedSoFar().toLocaleString() : "0"}
+//             </span>
+//           </div>
+//         </div>
+
+//         {/* Rate Info */}
+//         {presaleData && (
+//           <div className="mt-3 sm:mt-4 mx-4 sm:mx-8 py-2 sm:py-4 px-3 sm:px-4 text-center transition bg-white/15 rounded-lg">
+//             <p className="text-white mb-1 text-sm sm:text-lg md:text-xl lg:text-2xl">
+//               1 WUSLE = {presaleData.wusleRate.toFixed(4)} USDT
+//             </p>
+//             <p className="text-white text-xs sm:text-sm md:text-base lg:text-lg">
+//               LISTING PRICE: {presaleData.listingPrice.toFixed(3)} USDT
+//             </p>
+//           </div>
+//         )}
+
+//         {/* Your Purchased WUSLE */}
+//         {session?.user && (
+//           <div className="flex font-bold justify-between items-center mt-3 px-3 text-sm mx-4 sm:mx-14">
+//             <span className="text-white uppercase text-xs sm:text-md md:text-lg lg:text-xl">
+//               YOUR PURCHASED WUSLE
+//             </span>
+//             <span className="font-bold text-white text-xs sm:text-md md:text-lg lg:text-xl">
+//               {(userStats?.wuslePurchased ?? 0).toFixed(5)}
+//             </span>
+//           </div>
+//         )}
+
+//         {/* Currency Selection */}
+//         <div className="mt-4 flex mx-4 sm:mx-8 items-center justify-between gap-2">
+//           <Button
+//             onClick={() => setSelectedCurrency("USDT")}
+//             variant={selectedCurrency === "USDT" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/3 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "USDT" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Usdt} alt="USDT" width={24} height={24} />
+//             <span>USDT</span>
+//           </Button>
+
+//           <Button
+//             onClick={() => setSelectedCurrency("SOL")}
+//             variant={selectedCurrency === "SOL" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/3 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "SOL" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Sol} alt="Sol" width={24} height={24} />
+//             <span>SOL</span>
+//           </Button>
+
+//           <Button
+//             onClick={() => setSelectedCurrency("ETH")}
+//             variant={selectedCurrency === "ETH" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/3 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "ETH" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Ether} alt="ETH" width={24} height={24} />
+//             <span>ETH</span>
+//           </Button>
+//         </div>
+
+//         {/* Payment Row */}
+//         <div className="mt-4 mx-4 sm:mx-12 flex justify-between gap-4 px-4 sm:px-8">
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 placeholder="YOU PAY"
+//                 value={amount}
+//                 onChange={(e) => setAmount(e.target.value)}
+//                 className="bg-white/20 text-white placeholder:text-white/90 placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-2 top-1/2 transform -translate-y-1/2">
+//                 {selectedCurrency === "USDT" && (
+//                   <Image src={Usdt} alt="USDT" width={24} height={24} />
+//                 )}
+//                 {selectedCurrency === "SOL" && (
+//                   <Image src={Sol} alt="SOL" width={24} height={24} />
+//                 )}
+//                 {selectedCurrency === "ETH" && (
+//                   <Image src={Ether} alt="ETH" width={24} height={24} />
+//                 )}
+//               </span>
+//             </div>
+//           </div>
+
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 value={wusleAmount.toFixed(4)}
+//                 disabled
+//                 placeholder="YOU GET"
+//                 className="bg-white/20 text-white placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
+//                 <Image
+//                   src={Wusle}
+//                   alt="WUSLE"
+//                   width={32}
+//                   height={32}
+//                   className="rounded-full border bg-white border-purple-700 p-1"
+//                 />
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Connect Wallet / Buy Buttons */}
+//         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
+//           {!session?.user ? (
+//             <Button
+//               onClick={() => setShowLogin(true)}
+//               className="w-1/2 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-sm sm:text-lg md:text-md lg:text-lg"
+//             >
+//               CONNECT YOUR WALLET
+//             </Button>
+//           ) : (
+//             <>
+//               {/* If NOT ETH => Show Solana wallet button */}
+//               {selectedCurrency !== "ETH" && (
+//                 <WalletMultiButton
+//                   style={{
+//                     width: "100%",
+//                     maxWidth: "600px",
+//                     padding: "16px",
+//                     color: "black",
+//                     fontWeight: "bold",
+//                     background: "#fce2ff",
+//                     borderRadius: "10px",
+//                     border: "none",
+//                     cursor: "pointer",
+//                     transition: "all 0.3s ease-in-out",
+//                     fontSize: "clamp(14px, 2vw, 16px)",
+//                     textAlign: "center",
+//                     justifyContent: "center",
+//                     alignItems: "center",
+//                     display: "flex",
+//                   }}
+//                 >
+//                   {solanaConnected ? "SOL WALLET CONNECTED" : "CONNECT SOL WALLET"}
+//                 </WalletMultiButton>
+//               )}
+
+//               {/* If ETH => show "Connect ETH Wallet" button */}
+//               {selectedCurrency === "ETH" && !connectedEth && (
+//                 <Button
+//                   onClick={connectEthWallet}
+//                   className="w-1/2 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-sm sm:text-lg md:text-md lg:text-lg"
+//                 >
+//                   CONNECT ETH WALLET
+//                 </Button>
+//               )}
+
+//               {/* If ETH & connected => show short address */}
+//               {selectedCurrency === "ETH" && connectedEth && (
+//                 <div className="text-center text-white">
+//                   <p>ETH Wallet: {ethAddress.slice(0, 6)}...{ethAddress.slice(-4)}</p>
+//                 </div>
+//               )}
+//             </>
+//           )}
+
+//           {/* The BUY NOW button (only if user is logged in). 
+//               Disabled if the relevant wallet for that currency is not connected. */}
+//           {session?.user && (
+//             <Button
+//               onClick={handleBuyNow}
+//               className="w-1/3 px-8 py-6 text-black font-bold bg-pink-100 hover:bg-white/80 rounded-lg text-sm sm:text-base md:text-lg"
+//               disabled={
+//                 (selectedCurrency !== "ETH" && !solanaConnected) ||
+//                 (selectedCurrency === "ETH" && !connectedEth)
+//               }
+//             >
+//               BUY NOW
+//             </Button>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* Login Modal */}
+//       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
+
+//       {/* Receipt Modal */}
+//       <ReceiptModal show={showReceipt} slip={slip} onClose={() => setShowReceipt(false)} />
+//     </div>
+//   );
+// }
+
+
+
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,6 +766,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Usdt from "../../assets/Images/usdt.png";
 import Sol from "../../assets/Images/sol.png";
 import Wusle from "../../assets/Images/logo.jpeg";
+
+import { toast } from "react-hot-toast";
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -30,6 +790,7 @@ import {
 import {
   getAssociatedTokenAddress,
   createTransferInstruction,
+  createAssociatedTokenAccountInstruction,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
@@ -78,11 +839,16 @@ export default function PresaleInterface() {
   const { data: session } = useSession();
   const { publicKey, connected, sendTransaction } = useWallet();
 
-  // We'll keep only one mobile hook for specific breakpoints used in inline styles
+  // Single mobile breakpoint hook
   const isMobile6 = useIsMobile(475);
 
   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
-  const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState<Countdown>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [progress, setProgress] = useState<number>(0);
   const [amount, setAmount] = useState<string>("");
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USDT");
@@ -90,7 +856,14 @@ export default function PresaleInterface() {
   const [showLogin, setShowLogin] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [slip, setSlip] = useState<SlipData | null>(null);
-  const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(null);
+  const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(
+    null
+  );
+
+  // 1. READ ENV VARIABLES
+  const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC || "https://api.devnet.solana.com";
+  const USDT_MINT = process.env.NEXT_PUBLIC_USDT_MINT || "EVPcoys7wBBAEecUhAXPbjGiwjVgs8Zz3tbMijqqJxNm";
+  const SOL_RECEIVER = process.env.NEXT_PUBLIC_SOL_RECEIVER || "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G";
 
   async function refreshUserStats() {
     try {
@@ -99,10 +872,11 @@ export default function PresaleInterface() {
       if (res.ok) {
         setUserStats(data);
       } else {
-        console.error("Error fetching user stats:", data.error);
+        toast.error(data.error || "Error fetching user stats");
       }
     } catch (error) {
       console.error("Error fetching user stats:", error);
+      toast.error("Unable to fetch user stats. The gremlins must be at play!");
     }
   }
 
@@ -112,7 +886,7 @@ export default function PresaleInterface() {
     }
   }, [session]);
 
-  // Fetch presale data
+  // 2. FETCH PRESALE DATA
   useEffect(() => {
     async function fetchPresale() {
       try {
@@ -121,20 +895,21 @@ export default function PresaleInterface() {
         if (res.ok) {
           setPresaleData(data);
         } else {
-          console.error("Failed to load presale data:", data.error);
+          toast.error(data.error || "Failed to load presale data");
         }
       } catch (err) {
         console.error("Error fetching presale data:", err);
+        toast.error("Error fetching presale data. Check console for details!");
       }
     }
 
     fetchPresale();
-    // Uncomment below to poll every 30 seconds if needed.
+    // If you want periodic refresh:
     // const interval = setInterval(fetchPresale, 30000);
     // return () => clearInterval(interval);
   }, []);
 
-  // Update progress bar
+  // 3. UPDATE PROGRESS BAR
   useEffect(() => {
     if (!presaleData) return;
     const { stages, currentStage } = presaleData;
@@ -153,7 +928,7 @@ export default function PresaleInterface() {
     setProgress(Math.min(Math.max(frac, 0), 100));
   }, [presaleData]);
 
-  // Countdown timer
+  // 4. COUNTDOWN TIMER
   useEffect(() => {
     if (!presaleData) return;
     const endsAt = new Date(presaleData.endsAt).getTime();
@@ -173,7 +948,7 @@ export default function PresaleInterface() {
     return () => clearInterval(timer);
   }, [presaleData]);
 
-  // Calculate WUSLE amount based on user input
+  // 5. CALCULATE WUSLE AMOUNT
   useEffect(() => {
     if (!presaleData) return;
     const rate = presaleData.wusleRate || 0.0037;
@@ -199,7 +974,7 @@ export default function PresaleInterface() {
       return { pct, label: `${st.stageNumber}`, status };
     });
   }
-  
+
   function stagesTotalRaisedSoFar() {
     if (!presaleData) return 0;
     const { stages, currentStage } = presaleData;
@@ -212,30 +987,33 @@ export default function PresaleInterface() {
     return completed + active.raised;
   }
 
+  // 6. HANDLE BUY TRANSACTION
   async function handleBuyNow() {
     try {
       if (!session?.user) {
-        alert("You must be logged in.");
+        toast.error("Please log in before buying. We have WUSLE but we also like security!");
         return;
       }
       if (!publicKey || !connected) {
-        alert("Connect your wallet first!");
+        toast.error("Connect your wallet first. The blockchain awaits!");
         return;
       }
 
       const paid = parseFloat(amount || "0");
       if (paid <= 0) {
-        alert("Enter a valid amount!");
+        toast.error("Enter a valid amount. Zero won't buy you any WUSLE!");
         return;
       }
 
+      // Solana connection
+      const connection = new Connection(SOLANA_RPC, "confirmed");
       let txSignature = "";
-      const connection = new Connection("https://api.devnet.solana.com", "confirmed");
 
+      // 6a. SOL flow
       if (selectedCurrency === "SOL") {
-        const receiverAddress = "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G"; // Replace with your receiver address
-        const receiverPubkey = new PublicKey(receiverAddress);
+        const receiverPubkey = new PublicKey(SOL_RECEIVER);
         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
+
         const transaction = new Transaction().add(
           SystemProgram.transfer({
             fromPubkey: publicKey,
@@ -244,39 +1022,69 @@ export default function PresaleInterface() {
           })
         );
         txSignature = await sendTransaction(transaction, connection);
-        console.log("SOL Transaction sig:", txSignature);
-      } else if (selectedCurrency === "USDT") {
-        // USDT transaction using SPL token instructions
-        const USDT_MINT = new PublicKey("INSERT_YOUR_USDT_MINT_ADDRESS_HERE");
-        const recipientPubkey = new PublicKey("INSERT_USDT_RECEIVER_ADDRESS_HERE");
-        const senderUsdtATA = await getAssociatedTokenAddress(USDT_MINT, publicKey);
-        const recipientUsdtATA = await getAssociatedTokenAddress(USDT_MINT, recipientPubkey);
-        const usdtDecimals = 6;
-        const amountInSmallestUnits = Math.floor(paid * Math.pow(10, usdtDecimals));
-
-        const transaction = new Transaction().add(
-          createTransferInstruction(
-            senderUsdtATA,
-            recipientUsdtATA,
-            publicKey,
-            amountInSmallestUnits,
-            [],
-            TOKEN_PROGRAM_ID
-          )
-        );
-
-        txSignature = await sendTransaction(transaction, connection);
-        console.log("USDT Transaction sig:", txSignature);
       }
 
+      // 6b. USDT flow
+      else if (selectedCurrency === "USDT") {
+        try {
+          const usdtMintPubKey = new PublicKey(USDT_MINT);
+          const recipientPubkey = new PublicKey(SOL_RECEIVER);
+
+          const senderUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, publicKey);
+          const recipientUsdtATA = await getAssociatedTokenAddress(
+            usdtMintPubKey,
+            recipientPubkey
+          );
+
+          const usdtDecimals = 6; // Adjust if different
+          const amountInSmallestUnits = Math.floor(paid * 10 ** usdtDecimals);
+
+          const transaction = new Transaction();
+
+          // Ensure recipient has an associated token account
+          const recipientATAInfo = await connection.getAccountInfo(recipientUsdtATA);
+          if (!recipientATAInfo) {
+            transaction.add(
+              createAssociatedTokenAccountInstruction(
+                publicKey, // payer
+                recipientUsdtATA, // ATA to create
+                recipientPubkey, // token owner
+                usdtMintPubKey
+              )
+            );
+          }
+
+          // Transfer USDT
+          transaction.add(
+            createTransferInstruction(
+              senderUsdtATA,
+              recipientUsdtATA,
+              publicKey,
+              amountInSmallestUnits,
+              [],
+              TOKEN_PROGRAM_ID
+            )
+          );
+
+          txSignature = await sendTransaction(transaction, connection);
+        } catch (err: any) {
+          console.error("❌ USDT Transaction Error:", err);
+          toast.error("Transaction failed! Something spilled in the blockchain engine.");
+          return;
+        }
+      }
+
+      // 7. CONFIRM TRANSACTION
       const latestBlockHash = await connection.getLatestBlockhash();
       await connection.confirmTransaction({
         signature: txSignature,
         blockhash: latestBlockHash.blockhash,
         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
       });
-      console.log(`${selectedCurrency} devnet transaction confirmed!`);
 
+      toast.success(`${selectedCurrency} transaction confirmed! 🎉 Tx: ${txSignature.slice(0, 16)}...`);
+
+      // 8. CREATE SERVER-SIDE SLIP RECORD
       const res = await fetch("/api/slip/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -289,15 +1097,18 @@ export default function PresaleInterface() {
         }),
       });
       const data = await res.json();
+
       if (res.ok) {
         setSlip(data.slip);
         setShowReceipt(true);
+        // Refresh user stats after purchase
+        refreshUserStats();
       } else {
-        alert(data.error || "Error creating slip");
+        toast.error(data.error || "Error creating slip on the server. Our apologies!");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("handleBuyNow error:", err);
-      alert("Error on buy slip or devnet transaction");
+      toast.error("Uh oh, transaction or slip creation failed. Check console for details.");
     }
   }
 
@@ -311,9 +1122,7 @@ export default function PresaleInterface() {
           </h2>
           {presaleData && (
             <>
-              <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
-                IS NOW LIVE!
-              </h2>
+              <h2 className="font-bold text-lg sm:text-xl uppercase text-white">IS NOW LIVE!</h2>
               <h3 className="font-bold text-md sm:text-xl mt-1 text-white">
                 STAGE {presaleData.currentStage}/{presaleData.stages.length}
               </h3>
@@ -323,11 +1132,6 @@ export default function PresaleInterface() {
             </>
           )}
         </div>
-
-        {/* (Optional) Lottie Animation */}
-        {/* <div className="w-full max-w-40 sm:max-w-52 mx-auto mb-4">
-          <Lottie animationData={lottieAnimation} loop={true} />
-        </div> */}
 
         {/* Countdown */}
         {presaleData ? (
@@ -339,7 +1143,13 @@ export default function PresaleInterface() {
                     {countdown[unit as keyof typeof countdown]}
                   </span>
                   <span className="text-white text-sm sm:text-base uppercase mt-2">
-                    {unit === "days" ? "Days" : unit === "hours" ? "Hrs" : unit === "minutes" ? "Mins" : "Secs"}
+                    {unit === "days"
+                      ? "Days"
+                      : unit === "hours"
+                      ? "Hrs"
+                      : unit === "minutes"
+                      ? "Mins"
+                      : "Secs"}
                   </span>
                 </div>
               </div>
@@ -372,18 +1182,25 @@ export default function PresaleInterface() {
                       className="absolute flex flex-col items-center"
                       style={{ left: `calc(${m.pct}% - 8px)` }}
                     >
-                      <span className={`text-xs font-bold mb-1 ${textColor}`}>
-                        {m.label}
-                      </span>
+                      <span className={`text-xs font-bold mb-1 ${textColor}`}>{m.label}</span>
                       <div
-                        className={`${isMobile6 ? "w-2 h-1" : "w-3 h-1"} border-l-4 border-r-4 border-l-transparent border-r-transparent border-t-8 ${arrowColor}`}
+                        className={`${
+                          isMobile6 ? "w-2 h-1" : "w-3 h-1"
+                        } border-l-4 border-r-4 border-l-transparent border-r-transparent border-t-8 ${arrowColor}`}
                       />
                     </div>
                   );
                 })}
             </div>
-            <div className={`w-full bg-white/20 rounded-full overflow-hidden ${isMobile6 ? "h-5" : "h-4"}`}>
-              <div className="h-full bg-purple-200 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div
+              className={`w-full bg-white/20 rounded-full overflow-hidden ${
+                isMobile6 ? "h-5" : "h-4"
+              }`}
+            >
+              <div
+                className="h-full bg-purple-200 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
         </div>
@@ -402,7 +1219,9 @@ export default function PresaleInterface() {
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-white text-xs sm:text-sm md:text-sm">USDT RAISED</span>
+            <span className="text-white text-xs sm:text-sm md:text-sm">
+              USDT RAISED
+            </span>
             <span className="text-white text-xs sm:text-sm md:text-sm lg:text-lg">
               ${presaleData ? stagesTotalRaisedSoFar().toLocaleString() : "0"}
             </span>
@@ -470,7 +1289,12 @@ export default function PresaleInterface() {
                 className="bg-white/20 text-white placeholder:text-white/90 placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
               />
               <span className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <Image src={selectedCurrency === 'USDT' ? Usdt : Sol} alt={selectedCurrency} width={24} height={24} />
+                <Image
+                  src={selectedCurrency === "USDT" ? Usdt : Sol}
+                  alt={selectedCurrency}
+                  width={24}
+                  height={24}
+                />
               </span>
             </div>
           </div>
@@ -484,7 +1308,13 @@ export default function PresaleInterface() {
                 className="bg-white/20 text-white placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
               />
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <Image src={Wusle} alt="WUSLE" width={32} height={32} className="rounded-full border bg-white border-purple-700 p-1" />
+                <Image
+                  src={Wusle}
+                  alt="WUSLE"
+                  width={32}
+                  height={32}
+                  className="rounded-full border bg-white border-purple-700 p-1"
+                />
               </span>
             </div>
           </div>
@@ -542,6 +1372,1154 @@ export default function PresaleInterface() {
     </div>
   );
 }
+
+
+
+
+
+
+
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import Image from "next/image";
+// import { motion, AnimatePresence } from "framer-motion";
+// import Usdt from "../../assets/Images/usdt.png";
+// import Sol from "../../assets/Images/sol.png";
+// import Wusle from "../../assets/Images/logo.jpeg";
+
+// import { useWallet } from "@solana/wallet-adapter-react";
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// import { useSession } from "next-auth/react";
+// import LoginModal from "@/components/LoginModal";
+// import dynamic from "next/dynamic";
+// import { useIsMobile } from "@/hooks/useIsMobile";
+
+// const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+// import lottieAnimation from "@/assets/Images/wave.json";
+
+// import {
+//   Connection,
+//   SystemProgram,
+//   Transaction,
+//   PublicKey,
+//   LAMPORTS_PER_SOL,
+// } from "@solana/web3.js";
+
+// import {
+//   getAssociatedTokenAddress,
+//   createTransferInstruction,
+//   createAssociatedTokenAccountInstruction, // ← Add this line
+//   TOKEN_PROGRAM_ID,
+// } from "@solana/spl-token";
+
+
+// import ReceiptModal from "../ReceiptModal";
+
+// /* --------------- Types --------------- */
+// interface StageData {
+//   stageNumber: number;
+//   target: number;
+//   raised: number;
+//   startTime: string;
+//   endTime: string;
+//   rate: number;
+//   listingPrice: number;
+// }
+
+// interface PresaleAPIResponse {
+//   stages: StageData[];
+//   currentStage: number;
+//   endsAt: string;
+//   wusleRate: number;
+//   listingPrice: number;
+//   totalWusleSupply: string;
+//   liquidityAtLaunch: string;
+// }
+
+// interface Countdown {
+//   days: number;
+//   hours: number;
+//   minutes: number;
+//   seconds: number;
+// }
+
+// interface SlipData {
+//   id: string;
+//   userId: string;
+//   walletAddress: string;
+//   currency: string;
+//   amountPaid: number;
+//   wuslePurchased: number;
+//   redeemCode: string;
+//   createdAt: string;
+// }
+
+// export default function PresaleInterface() {
+//   const { data: session } = useSession();
+//   const { publicKey, connected, sendTransaction } = useWallet();
+
+//   // Single mobile breakpoint hook
+//   const isMobile6 = useIsMobile(475);
+
+//   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
+//   const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//   const [progress, setProgress] = useState<number>(0);
+//   const [amount, setAmount] = useState<string>("");
+//   const [selectedCurrency, setSelectedCurrency] = useState<string>("USDT");
+//   const [wusleAmount, setWusleAmount] = useState<number>(0);
+//   const [showLogin, setShowLogin] = useState(false);
+//   const [showReceipt, setShowReceipt] = useState(false);
+//   const [slip, setSlip] = useState<SlipData | null>(null);
+//   const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(null);
+
+//   async function refreshUserStats() {
+//     try {
+//       const res = await fetch("/api/user");
+//       const data = await res.json();
+//       if (res.ok) {
+//         setUserStats(data);
+//       } else {
+//         console.error("Error fetching user stats:", data.error);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching user stats:", error);
+//     }
+//   }
+
+//   useEffect(() => {
+//     if (session?.user) {
+//       refreshUserStats();
+//     }
+//   }, [session]);
+
+//   // Fetch presale data
+//   useEffect(() => {
+//     async function fetchPresale() {
+//       try {
+//         const res = await fetch("/api/presale");
+//         const data = await res.json();
+//         if (res.ok) {
+//           setPresaleData(data);
+//         } else {
+//           console.error("Failed to load presale data:", data.error);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching presale data:", err);
+//       }
+//     }
+
+//     fetchPresale();
+//     // Uncomment below to poll every 30 seconds if needed.
+//     // const interval = setInterval(fetchPresale, 30000);
+//     // return () => clearInterval(interval);
+//   }, []);
+
+//   // Update progress bar
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const { stages, currentStage } = presaleData;
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) {
+//       setProgress(0);
+//       return;
+//     }
+//     let sumCompleted = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) sumCompleted += st.target;
+//     }
+//     const totalRaisedSoFar = sumCompleted + active.raised;
+//     const frac = (totalRaisedSoFar / totalCap) * 100;
+//     setProgress(Math.min(Math.max(frac, 0), 100));
+//   }, [presaleData]);
+
+//   // Countdown timer
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const endsAt = new Date(presaleData.endsAt).getTime();
+//     const timer = setInterval(() => {
+//       const now = Date.now();
+//       const diff = endsAt - now;
+//       if (diff <= 0) {
+//         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//       } else {
+//         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+//         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+//         const m = Math.floor((diff / (1000 * 60)) % 60);
+//         const s = Math.floor((diff / 1000) % 60);
+//         setCountdown({ days: d, hours: h, minutes: m, seconds: s });
+//       }
+//     }, 1000);
+//     return () => clearInterval(timer);
+//   }, [presaleData]);
+
+//   // Calculate WUSLE amount based on user input
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const rate = presaleData.wusleRate || 0.0037;
+//     const val = parseFloat(amount || "0") / rate;
+//     setWusleAmount(isNaN(val) ? 0 : val);
+//   }, [amount, presaleData]);
+
+//   function getStageMarkers() {
+//     if (!presaleData) return [];
+//     const { stages, currentStage } = presaleData;
+//     if (!stages.length) return [];
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+//     let cumulative = 0;
+//     return stages.map((st) => {
+//       const pct = (cumulative / totalCap) * 100;
+//       cumulative += st.target;
+//       let status = "upcoming";
+//       if (st.stageNumber < currentStage) {
+//         status = "completed";
+//       } else if (st.stageNumber === currentStage) {
+//         status = "current";
+//       }
+//       return { pct, label: `${st.stageNumber}`, status };
+//     });
+//   }
+  
+//   function stagesTotalRaisedSoFar() {
+//     if (!presaleData) return 0;
+//     const { stages, currentStage } = presaleData;
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) return 0;
+//     let completed = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) completed += st.target;
+//     }
+//     return completed + active.raised;
+//   }
+
+//   async function handleBuyNow() {
+//     try {
+//       if (!session?.user) {
+//         alert("You must be logged in.");
+//         return;
+//       }
+//       if (!publicKey || !connected) {
+//         alert("Connect your wallet first!");
+//         return;
+//       }
+
+//       const paid = parseFloat(amount || "0");
+//       if (paid <= 0) {
+//         alert("Enter a valid amount!");
+//         return;
+//       }
+
+//       let txSignature = "";
+//       const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+
+//       if (selectedCurrency === "SOL") {
+//         const receiverAddress = "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G"; // Replace with your receiver address
+//         const receiverPubkey = new PublicKey(receiverAddress);
+//         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
+//         const transaction = new Transaction().add(
+//           SystemProgram.transfer({
+//             fromPubkey: publicKey,
+//             toPubkey: receiverPubkey,
+//             lamports,
+//           })
+//         );
+//         txSignature = await sendTransaction(transaction, connection);
+//         console.log("SOL Transaction sig:", txSignature);
+//       } else if (selectedCurrency === "USDT") {
+//           try {
+//             const USDT_MINT = new PublicKey("EVPcoys7wBBAEecUhAXPbjGiwjVgs8Zz3tbMijqqJxNm");
+//             const recipientPubkey = new PublicKey("Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G");
+        
+//             const senderUsdtATA = await getAssociatedTokenAddress(USDT_MINT, publicKey);
+//             const recipientUsdtATA = await getAssociatedTokenAddress(USDT_MINT, recipientPubkey);
+        
+//             const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+        
+//             console.log("Sender USDT ATA:", senderUsdtATA.toBase58());
+//             console.log("Recipient USDT ATA:", recipientUsdtATA.toBase58());
+        
+//             const usdtDecimals = 6; // Confirm this matches mint
+//             const amountInSmallestUnits = Math.floor(paid * Math.pow(10, usdtDecimals));
+//             console.log("Amount (smallest units):", amountInSmallestUnits);
+        
+//             const transaction = new Transaction();
+        
+//             const recipientATAInfo = await connection.getAccountInfo(recipientUsdtATA);
+//             if (!recipientATAInfo) {
+//               console.log("Recipient ATA missing, adding ATA creation instruction...");
+//               transaction.add(
+//                 createAssociatedTokenAccountInstruction(
+//                   publicKey, // payer
+//                   recipientUsdtATA, // ATA to create
+//                   recipientPubkey, // token owner
+//                   USDT_MINT
+//                 )
+//               );
+//             } else {
+//               console.log("Recipient ATA exists.");
+//             }
+        
+//             transaction.add(
+//               createTransferInstruction(
+//                 senderUsdtATA,
+//                 recipientUsdtATA,
+//                 publicKey,
+//                 amountInSmallestUnits,
+//                 [],
+//                 TOKEN_PROGRAM_ID
+//               )
+//             );
+        
+//             console.log("Transaction constructed, sending...");
+//             txSignature = await sendTransaction(transaction, connection);
+//             console.log("✅ USDT Transaction Signature:", txSignature);
+        
+//             const latestBlockHash = await connection.getLatestBlockhash();
+//             await connection.confirmTransaction({
+//               signature: txSignature,
+//               blockhash: latestBlockHash.blockhash,
+//               lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+//             });
+        
+//             console.log("✅ USDT Transaction Confirmed:", txSignature);
+//           } catch (err: any) {
+//             console.error("❌ USDT Transaction Error:", err);
+//             alert("Transaction failed: " + err.message);
+//             return;
+//           }
+//         }
+        
+
+//       const latestBlockHash = await connection.getLatestBlockhash();
+//       await connection.confirmTransaction({
+//         signature: txSignature,
+//         blockhash: latestBlockHash.blockhash,
+//         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+//       });
+//       console.log(`${selectedCurrency} devnet transaction confirmed!`);
+
+//       const res = await fetch("/api/slip/buy", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           walletAddress: publicKey.toBase58(),
+//           currency: selectedCurrency,
+//           amountPaid: paid,
+//           wuslePurchased: wusleAmount,
+//           txSignature,
+//         }),
+//       });
+//       const data = await res.json();
+//       if (res.ok) {
+//         setSlip(data.slip);
+//         setShowReceipt(true);
+//       } else {
+//         alert(data.error || "Error creating slip");
+//       }
+//     } catch (err) {
+//       console.error("handleBuyNow error:", err);
+//       alert("Error on buy slip or devnet transaction");
+//     }
+//   }
+
+//   return (
+//     <div className="flex items-center justify-center min-h-screen p-4">
+//       <div className="relative w-full py-4 max-w-[600px] mx-auto bg-gradient-to-br from-purple-900 to-purple-500 rounded-lg transition-all duration-300">
+//         {/* Title / Stage Info */}
+//         <div className="text-center mt-2">
+//           <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//             $WUSLE PRESALE
+//           </h2>
+//           {presaleData && (
+//             <>
+//               <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//                 IS NOW LIVE!
+//               </h2>
+//               <h3 className="font-bold text-md sm:text-xl mt-1 text-white">
+//                 STAGE {presaleData.currentStage}/{presaleData.stages.length}
+//               </h3>
+//               <p className="text-xs sm:text-lg mt-4 text-gray-200">
+//                 Liquidity At Launch: {presaleData.liquidityAtLaunch} USDT
+//               </p>
+//             </>
+//           )}
+//         </div>
+
+//         {/* Countdown */}
+//         {presaleData ? (
+//           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-black mx-4 md:mx-8">
+//             {["days", "hours", "minutes", "seconds"].map((unit) => (
+//               <div key={unit} className="flex flex-col items-center">
+//                 <div className="bg-white/40 text-white rounded-lg hover:bg-white/20 transition flex flex-col items-center justify-center w-[70px] h-[60px] sm:w-[90px] sm:h-[70px] md:w-[100px] md:h-[80px] lg:w-[120px] lg:h-[100px]">
+//                   <span className="font-bold text-xl sm:text-2xl md:text-3xl">
+//                     {countdown[unit as keyof typeof countdown]}
+//                   </span>
+//                   <span className="text-white text-sm sm:text-base uppercase mt-2">
+//                     {unit === "days" ? "Days" : unit === "hours" ? "Hrs" : unit === "minutes" ? "Mins" : "Secs"}
+//                   </span>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         ) : (
+//           <p className="text-center text-white mt-2">Loading Presale Data...</p>
+//         )}
+
+//         {/* Progress & Stage Markers */}
+//         <div className="mt-4 px-2 sm:px-8">
+//           <div className="relative px-2">
+//             <div className="relative w-full h-8 mb-0">
+//               {presaleData &&
+//                 getStageMarkers().map((m, idx) => {
+//                   let arrowColor, textColor;
+//                   if (m.status === "completed") {
+//                     arrowColor = "border-t-green-500";
+//                     textColor = "text-green-500";
+//                   } else if (m.status === "current") {
+//                     arrowColor = "border-t-yellow-500";
+//                     textColor = "text-yellow-500";
+//                   } else {
+//                     arrowColor = "border-t-white";
+//                     textColor = "text-white";
+//                   }
+//                   return (
+//                     <div
+//                       key={idx}
+//                       className="absolute flex flex-col items-center"
+//                       style={{ left: `calc(${m.pct}% - 8px)` }}
+//                     >
+//                       <span className={`text-xs font-bold mb-1 ${textColor}`}>
+//                         {m.label}
+//                       </span>
+//                       <div
+//                         className={`${isMobile6 ? "w-2 h-1" : "w-3 h-1"} border-l-4 border-r-4 border-l-transparent border-r-transparent border-t-8 ${arrowColor}`}
+//                       />
+//                     </div>
+//                   );
+//                 })}
+//             </div>
+//             <div className={`w-full bg-white/20 rounded-full overflow-hidden ${isMobile6 ? "h-5" : "h-4"}`}>
+//               <div className="h-full bg-purple-200 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* WUSLE Sold / USDT Raised */}
+//         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">WUSLE SOLD</span>
+//             <span className="text-white text-xs sm:text-base md:text-md lg:text-lg">
+//               {presaleData
+//                 ? (
+//                     stagesTotalRaisedSoFar() / (presaleData.wusleRate || 0.0037)
+//                   ).toLocaleString(undefined, { maximumFractionDigits: 0 })
+//                 : 0}{" "}
+//               / {presaleData ? presaleData.totalWusleSupply : 0}
+//             </span>
+//           </div>
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-xs sm:text-sm md:text-sm">USDT RAISED</span>
+//             <span className="text-white text-xs sm:text-sm md:text-sm lg:text-lg">
+//               ${presaleData ? stagesTotalRaisedSoFar().toLocaleString() : "0"}
+//             </span>
+//           </div>
+//         </div>
+
+//         {/* Rate Info */}
+//         {presaleData && (
+//           <div className="mt-3 sm:mt-4 mx-4 sm:mx-8 py-2 sm:py-4 px-3 sm:px-4 text-center transition bg-white/15 rounded-lg">
+//             <p className="text-white mb-1 text-sm sm:text-lg md:text-xl lg:text-2xl">
+//               1 WUSLE = {presaleData.wusleRate.toFixed(4)} USDT
+//             </p>
+//             <p className="text-white text-xs sm:text-sm md:text-base lg:text-lg">
+//               LISTING PRICE: {presaleData.listingPrice.toFixed(3)} USDT
+//             </p>
+//           </div>
+//         )}
+
+//         {/* Your Purchased WUSLE */}
+//         {session?.user && (
+//           <div className="flex font-bold justify-between items-center mt-3 px-3 text-sm mx-4 sm:mx-14">
+//             <span className="text-white uppercase text-xs sm:text-md md:text-lg lg:text-xl">
+//               YOUR PURCHASED WUSLE
+//             </span>
+//             <span className="font-bold text-white text-xs sm:text-md md:text-lg lg:text-xl">
+//               {(userStats?.wuslePurchased ?? 0).toFixed(5)}
+//             </span>
+//           </div>
+//         )}
+
+//         {/* Currency Selection */}
+//         <div className="mt-4 flex mx-4 sm:mx-8 items-center justify-between gap-2">
+//           <Button
+//             onClick={() => setSelectedCurrency("USDT")}
+//             variant={selectedCurrency === "USDT" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/2 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "USDT" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Usdt} alt="USDT" width={24} height={24} />
+//             <span>USDT</span>
+//           </Button>
+
+//           <Button
+//             onClick={() => setSelectedCurrency("SOL")}
+//             variant={selectedCurrency === "SOL" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/2 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "SOL" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Sol} alt="Sol" width={24} height={24} />
+//             <span>SOL</span>
+//           </Button>
+//         </div>
+
+//         {/* Payment Row */}
+//         <div className="mt-4 mx-4 sm:mx-12 flex justify-between gap-4 px-4 sm:px-8">
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 placeholder="YOU PAY"
+//                 value={amount}
+//                 onChange={(e) => setAmount(e.target.value)}
+//                 className="bg-white/20 text-white placeholder:text-white/90 placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-2 top-1/2 transform -translate-y-1/2">
+//                 <Image src={selectedCurrency === 'USDT' ? Usdt : Sol} alt={selectedCurrency} width={24} height={24} />
+//               </span>
+//             </div>
+//           </div>
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 value={wusleAmount.toFixed(4)}
+//                 disabled
+//                 placeholder="YOU GET"
+//                 className="bg-white/20 text-white placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
+//                 <Image src={Wusle} alt="WUSLE" width={32} height={32} className="rounded-full border bg-white border-purple-700 p-1" />
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Connect Wallet / Buy Section */}
+//         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
+//           {!session?.user ? (
+//             <Button
+//               onClick={() => setShowLogin(true)}
+//               className="w-1/2 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-sm sm:text-lg md:text-md lg:text-lg"
+//             >
+//               CONNECT YOUR WALLET
+//             </Button>
+//           ) : (
+//             <WalletMultiButton
+//               style={{
+//                 width: "100%",
+//                 maxWidth: "600px",
+//                 padding: "16px",
+//                 color: "black",
+//                 fontWeight: "bold",
+//                 background: "#fce2ff",
+//                 borderRadius: "10px",
+//                 border: "none",
+//                 cursor: "pointer",
+//                 transition: "all 0.3s ease-in-out",
+//                 fontSize: "clamp(14px, 2vw, 16px)",
+//                 textAlign: "center",
+//                 justifyContent: "center",
+//                 alignItems: "center",
+//                 display: "flex",
+//               }}
+//             >
+//               {connected ? "CONNECTED" : "CONNECT WALLET"}
+//             </WalletMultiButton>
+//           )}
+
+//           {session?.user && publicKey && connected && (
+//             <Button
+//               onClick={handleBuyNow}
+//               className="w-1/3 px-8 py-6 text-black font-bold bg-pink-100 hover:bg-white/80 rounded-lg text-sm sm:text-base md:text-lg"
+//             >
+//               BUY NOW
+//             </Button>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* Login Modal */}
+//       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
+
+//       {/* Receipt Modal */}
+//       <ReceiptModal show={showReceipt} slip={slip} onClose={() => setShowReceipt(false)} />
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import Image from "next/image";
+// import { motion, AnimatePresence } from "framer-motion";
+// import Usdt from "../../assets/Images/usdt.png";
+// import Sol from "../../assets/Images/sol.png";
+// import Wusle from "../../assets/Images/logo.jpeg";
+
+// import { useWallet } from "@solana/wallet-adapter-react";
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// import { useSession } from "next-auth/react";
+// import LoginModal from "@/components/LoginModal";
+// import dynamic from "next/dynamic";
+// import { useIsMobile } from "@/hooks/useIsMobile";
+
+// const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+// import lottieAnimation from "@/assets/Images/wave.json";
+
+// import {
+//   Connection,
+//   SystemProgram,
+//   Transaction,
+//   PublicKey,
+//   LAMPORTS_PER_SOL,
+// } from "@solana/web3.js";
+
+// import {
+//   getAssociatedTokenAddress,
+//   createTransferInstruction,
+//   TOKEN_PROGRAM_ID,
+// } from "@solana/spl-token";
+
+// import ReceiptModal from "../ReceiptModal";
+
+// /* --------------- Types --------------- */
+// interface StageData {
+//   stageNumber: number;
+//   target: number;
+//   raised: number;
+//   startTime: string;
+//   endTime: string;
+//   rate: number;
+//   listingPrice: number;
+// }
+
+// interface PresaleAPIResponse {
+//   stages: StageData[];
+//   currentStage: number;
+//   endsAt: string;
+//   wusleRate: number;
+//   listingPrice: number;
+//   totalWusleSupply: string;
+//   liquidityAtLaunch: string;
+// }
+
+// interface Countdown {
+//   days: number;
+//   hours: number;
+//   minutes: number;
+//   seconds: number;
+// }
+
+// interface SlipData {
+//   id: string;
+//   userId: string;
+//   walletAddress: string;
+//   currency: string;
+//   amountPaid: number;
+//   wuslePurchased: number;
+//   redeemCode: string;
+//   createdAt: string;
+// }
+
+// export default function PresaleInterface() {
+//   const { data: session } = useSession();
+//   const { publicKey, connected, sendTransaction } = useWallet();
+
+//   // We'll keep only one mobile hook for specific breakpoints used in inline styles
+//   const isMobile6 = useIsMobile(475);
+
+//   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
+//   const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//   const [progress, setProgress] = useState<number>(0);
+//   const [amount, setAmount] = useState<string>("");
+//   const [selectedCurrency, setSelectedCurrency] = useState<string>("USDT");
+//   const [wusleAmount, setWusleAmount] = useState<number>(0);
+//   const [showLogin, setShowLogin] = useState(false);
+//   const [showReceipt, setShowReceipt] = useState(false);
+//   const [slip, setSlip] = useState<SlipData | null>(null);
+//   const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(null);
+
+//   async function refreshUserStats() {
+//     try {
+//       const res = await fetch("/api/user");
+//       const data = await res.json();
+//       if (res.ok) {
+//         setUserStats(data);
+//       } else {
+//         console.error("Error fetching user stats:", data.error);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching user stats:", error);
+//     }
+//   }
+
+//   useEffect(() => {
+//     if (session?.user) {
+//       refreshUserStats();
+//     }
+//   }, [session]);
+
+//   // Fetch presale data
+//   useEffect(() => {
+//     async function fetchPresale() {
+//       try {
+//         const res = await fetch("/api/presale");
+//         const data = await res.json();
+//         if (res.ok) {
+//           setPresaleData(data);
+//         } else {
+//           console.error("Failed to load presale data:", data.error);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching presale data:", err);
+//       }
+//     }
+
+//     fetchPresale();
+//     // Uncomment below to poll every 30 seconds if needed.
+//     // const interval = setInterval(fetchPresale, 30000);
+//     // return () => clearInterval(interval);
+//   }, []);
+
+//   // Update progress bar
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const { stages, currentStage } = presaleData;
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) {
+//       setProgress(0);
+//       return;
+//     }
+//     let sumCompleted = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) sumCompleted += st.target;
+//     }
+//     const totalRaisedSoFar = sumCompleted + active.raised;
+//     const frac = (totalRaisedSoFar / totalCap) * 100;
+//     setProgress(Math.min(Math.max(frac, 0), 100));
+//   }, [presaleData]);
+
+//   // Countdown timer
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const endsAt = new Date(presaleData.endsAt).getTime();
+//     const timer = setInterval(() => {
+//       const now = Date.now();
+//       const diff = endsAt - now;
+//       if (diff <= 0) {
+//         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//       } else {
+//         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+//         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+//         const m = Math.floor((diff / (1000 * 60)) % 60);
+//         const s = Math.floor((diff / 1000) % 60);
+//         setCountdown({ days: d, hours: h, minutes: m, seconds: s });
+//       }
+//     }, 1000);
+//     return () => clearInterval(timer);
+//   }, [presaleData]);
+
+//   // Calculate WUSLE amount based on user input
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const rate = presaleData.wusleRate || 0.0037;
+//     const val = parseFloat(amount || "0") / rate;
+//     setWusleAmount(isNaN(val) ? 0 : val);
+//   }, [amount, presaleData]);
+
+//   function getStageMarkers() {
+//     if (!presaleData) return [];
+//     const { stages, currentStage } = presaleData;
+//     if (!stages.length) return [];
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+//     let cumulative = 0;
+//     return stages.map((st) => {
+//       const pct = (cumulative / totalCap) * 100;
+//       cumulative += st.target;
+//       let status = "upcoming";
+//       if (st.stageNumber < currentStage) {
+//         status = "completed";
+//       } else if (st.stageNumber === currentStage) {
+//         status = "current";
+//       }
+//       return { pct, label: `${st.stageNumber}`, status };
+//     });
+//   }
+  
+//   function stagesTotalRaisedSoFar() {
+//     if (!presaleData) return 0;
+//     const { stages, currentStage } = presaleData;
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) return 0;
+//     let completed = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) completed += st.target;
+//     }
+//     return completed + active.raised;
+//   }
+
+//   async function handleBuyNow() {
+//     try {
+//       if (!session?.user) {
+//         alert("You must be logged in.");
+//         return;
+//       }
+//       if (!publicKey || !connected) {
+//         alert("Connect your wallet first!");
+//         return;
+//       }
+
+//       const paid = parseFloat(amount || "0");
+//       if (paid <= 0) {
+//         alert("Enter a valid amount!");
+//         return;
+//       }
+
+//       let txSignature = "";
+//       const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+
+//       if (selectedCurrency === "SOL") {
+//         const receiverAddress = "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G"; // Replace with your receiver address
+//         const receiverPubkey = new PublicKey(receiverAddress);
+//         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
+//         const transaction = new Transaction().add(
+//           SystemProgram.transfer({
+//             fromPubkey: publicKey,
+//             toPubkey: receiverPubkey,
+//             lamports,
+//           })
+//         );
+//         txSignature = await sendTransaction(transaction, connection);
+//         console.log("SOL Transaction sig:", txSignature);
+//       } else if (selectedCurrency === "USDT") {
+//         // USDT transaction using SPL token instructions
+//         const USDT_MINT = new PublicKey("INSERT_YOUR_USDT_MINT_ADDRESS_HERE");
+//         const recipientPubkey = new PublicKey("INSERT_USDT_RECEIVER_ADDRESS_HERE");
+//         const senderUsdtATA = await getAssociatedTokenAddress(USDT_MINT, publicKey);
+//         const recipientUsdtATA = await getAssociatedTokenAddress(USDT_MINT, recipientPubkey);
+//         const usdtDecimals = 6;
+//         const amountInSmallestUnits = Math.floor(paid * Math.pow(10, usdtDecimals));
+
+//         const transaction = new Transaction().add(
+//           createTransferInstruction(
+//             senderUsdtATA,
+//             recipientUsdtATA,
+//             publicKey,
+//             amountInSmallestUnits,
+//             [],
+//             TOKEN_PROGRAM_ID
+//           )
+//         );
+
+//         txSignature = await sendTransaction(transaction, connection);
+//         console.log("USDT Transaction sig:", txSignature);
+//       }
+
+//       const latestBlockHash = await connection.getLatestBlockhash();
+//       await connection.confirmTransaction({
+//         signature: txSignature,
+//         blockhash: latestBlockHash.blockhash,
+//         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+//       });
+//       console.log(`${selectedCurrency} devnet transaction confirmed!`);
+
+//       const res = await fetch("/api/slip/buy", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           walletAddress: publicKey.toBase58(),
+//           currency: selectedCurrency,
+//           amountPaid: paid,
+//           wuslePurchased: wusleAmount,
+//           txSignature,
+//         }),
+//       });
+//       const data = await res.json();
+//       if (res.ok) {
+//         setSlip(data.slip);
+//         setShowReceipt(true);
+//       } else {
+//         alert(data.error || "Error creating slip");
+//       }
+//     } catch (err) {
+//       console.error("handleBuyNow error:", err);
+//       alert("Error on buy slip or devnet transaction");
+//     }
+//   }
+
+//   return (
+//     <div className="flex items-center justify-center min-h-screen p-4">
+//       <div className="relative w-full py-4 max-w-[600px] mx-auto bg-gradient-to-br from-purple-900 to-purple-500 rounded-lg transition-all duration-300">
+//         {/* Title / Stage Info */}
+//         <div className="text-center mt-2">
+//           <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//             $WUSLE PRESALE
+//           </h2>
+//           {presaleData && (
+//             <>
+//               <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//                 IS NOW LIVE!
+//               </h2>
+//               <h3 className="font-bold text-md sm:text-xl mt-1 text-white">
+//                 STAGE {presaleData.currentStage}/{presaleData.stages.length}
+//               </h3>
+//               <p className="text-xs sm:text-lg mt-4 text-gray-200">
+//                 Liquidity At Launch: {presaleData.liquidityAtLaunch} USDT
+//               </p>
+//             </>
+//           )}
+//         </div>
+
+//         {/* (Optional) Lottie Animation */}
+//         {/* <div className="w-full max-w-40 sm:max-w-52 mx-auto mb-4">
+//           <Lottie animationData={lottieAnimation} loop={true} />
+//         </div> */}
+
+//         {/* Countdown */}
+//         {presaleData ? (
+//           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-black mx-4 md:mx-8">
+//             {["days", "hours", "minutes", "seconds"].map((unit) => (
+//               <div key={unit} className="flex flex-col items-center">
+//                 <div className="bg-white/40 text-white rounded-lg hover:bg-white/20 transition flex flex-col items-center justify-center w-[70px] h-[60px] sm:w-[90px] sm:h-[70px] md:w-[100px] md:h-[80px] lg:w-[120px] lg:h-[100px]">
+//                   <span className="font-bold text-xl sm:text-2xl md:text-3xl">
+//                     {countdown[unit as keyof typeof countdown]}
+//                   </span>
+//                   <span className="text-white text-sm sm:text-base uppercase mt-2">
+//                     {unit === "days" ? "Days" : unit === "hours" ? "Hrs" : unit === "minutes" ? "Mins" : "Secs"}
+//                   </span>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         ) : (
+//           <p className="text-center text-white mt-2">Loading Presale Data...</p>
+//         )}
+
+//         {/* Progress & Stage Markers */}
+//         <div className="mt-4 px-2 sm:px-8">
+//           <div className="relative px-2">
+//             <div className="relative w-full h-8 mb-0">
+//               {presaleData &&
+//                 getStageMarkers().map((m, idx) => {
+//                   let arrowColor, textColor;
+//                   if (m.status === "completed") {
+//                     arrowColor = "border-t-green-500";
+//                     textColor = "text-green-500";
+//                   } else if (m.status === "current") {
+//                     arrowColor = "border-t-yellow-500";
+//                     textColor = "text-yellow-500";
+//                   } else {
+//                     arrowColor = "border-t-white";
+//                     textColor = "text-white";
+//                   }
+//                   return (
+//                     <div
+//                       key={idx}
+//                       className="absolute flex flex-col items-center"
+//                       style={{ left: `calc(${m.pct}% - 8px)` }}
+//                     >
+//                       <span className={`text-xs font-bold mb-1 ${textColor}`}>
+//                         {m.label}
+//                       </span>
+//                       <div
+//                         className={`${isMobile6 ? "w-2 h-1" : "w-3 h-1"} border-l-4 border-r-4 border-l-transparent border-r-transparent border-t-8 ${arrowColor}`}
+//                       />
+//                     </div>
+//                   );
+//                 })}
+//             </div>
+//             <div className={`w-full bg-white/20 rounded-full overflow-hidden ${isMobile6 ? "h-5" : "h-4"}`}>
+//               <div className="h-full bg-purple-200 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* WUSLE Sold / USDT Raised */}
+//         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">WUSLE SOLD</span>
+//             <span className="text-white text-xs sm:text-base md:text-md lg:text-lg">
+//               {presaleData
+//                 ? (
+//                     stagesTotalRaisedSoFar() / (presaleData.wusleRate || 0.0037)
+//                   ).toLocaleString(undefined, { maximumFractionDigits: 0 })
+//                 : 0}{" "}
+//               / {presaleData ? presaleData.totalWusleSupply : 0}
+//             </span>
+//           </div>
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-xs sm:text-sm md:text-sm">USDT RAISED</span>
+//             <span className="text-white text-xs sm:text-sm md:text-sm lg:text-lg">
+//               ${presaleData ? stagesTotalRaisedSoFar().toLocaleString() : "0"}
+//             </span>
+//           </div>
+//         </div>
+
+//         {/* Rate Info */}
+//         {presaleData && (
+//           <div className="mt-3 sm:mt-4 mx-4 sm:mx-8 py-2 sm:py-4 px-3 sm:px-4 text-center transition bg-white/15 rounded-lg">
+//             <p className="text-white mb-1 text-sm sm:text-lg md:text-xl lg:text-2xl">
+//               1 WUSLE = {presaleData.wusleRate.toFixed(4)} USDT
+//             </p>
+//             <p className="text-white text-xs sm:text-sm md:text-base lg:text-lg">
+//               LISTING PRICE: {presaleData.listingPrice.toFixed(3)} USDT
+//             </p>
+//           </div>
+//         )}
+
+//         {/* Your Purchased WUSLE */}
+//         {session?.user && (
+//           <div className="flex font-bold justify-between items-center mt-3 px-3 text-sm mx-4 sm:mx-14">
+//             <span className="text-white uppercase text-xs sm:text-md md:text-lg lg:text-xl">
+//               YOUR PURCHASED WUSLE
+//             </span>
+//             <span className="font-bold text-white text-xs sm:text-md md:text-lg lg:text-xl">
+//               {(userStats?.wuslePurchased ?? 0).toFixed(5)}
+//             </span>
+//           </div>
+//         )}
+
+//         {/* Currency Selection */}
+//         <div className="mt-4 flex mx-4 sm:mx-8 items-center justify-between gap-2">
+//           <Button
+//             onClick={() => setSelectedCurrency("USDT")}
+//             variant={selectedCurrency === "USDT" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/2 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "USDT" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Usdt} alt="USDT" width={24} height={24} />
+//             <span>USDT</span>
+//           </Button>
+
+//           <Button
+//             onClick={() => setSelectedCurrency("SOL")}
+//             variant={selectedCurrency === "SOL" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/2 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "SOL" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Sol} alt="Sol" width={24} height={24} />
+//             <span>SOL</span>
+//           </Button>
+//         </div>
+
+//         {/* Payment Row */}
+//         <div className="mt-4 mx-4 sm:mx-12 flex justify-between gap-4 px-4 sm:px-8">
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 placeholder="YOU PAY"
+//                 value={amount}
+//                 onChange={(e) => setAmount(e.target.value)}
+//                 className="bg-white/20 text-white placeholder:text-white/90 placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-2 top-1/2 transform -translate-y-1/2">
+//                 <Image src={selectedCurrency === 'USDT' ? Usdt : Sol} alt={selectedCurrency} width={24} height={24} />
+//               </span>
+//             </div>
+//           </div>
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 value={wusleAmount.toFixed(4)}
+//                 disabled
+//                 placeholder="YOU GET"
+//                 className="bg-white/20 text-white placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
+//                 <Image src={Wusle} alt="WUSLE" width={32} height={32} className="rounded-full border bg-white border-purple-700 p-1" />
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Connect Wallet / Buy Section */}
+//         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
+//           {!session?.user ? (
+//             <Button
+//               onClick={() => setShowLogin(true)}
+//               className="w-1/2 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-sm sm:text-lg md:text-md lg:text-lg"
+//             >
+//               CONNECT YOUR WALLET
+//             </Button>
+//           ) : (
+//             <WalletMultiButton
+//               style={{
+//                 width: "100%",
+//                 maxWidth: "600px",
+//                 padding: "16px",
+//                 color: "black",
+//                 fontWeight: "bold",
+//                 background: "#fce2ff",
+//                 borderRadius: "10px",
+//                 border: "none",
+//                 cursor: "pointer",
+//                 transition: "all 0.3s ease-in-out",
+//                 fontSize: "clamp(14px, 2vw, 16px)",
+//                 textAlign: "center",
+//                 justifyContent: "center",
+//                 alignItems: "center",
+//                 display: "flex",
+//               }}
+//             >
+//               {connected ? "CONNECTED" : "CONNECT WALLET"}
+//             </WalletMultiButton>
+//           )}
+
+//           {session?.user && publicKey && connected && (
+//             <Button
+//               onClick={handleBuyNow}
+//               className="w-1/3 px-8 py-6 text-black font-bold bg-pink-100 hover:bg-white/80 rounded-lg text-sm sm:text-base md:text-lg"
+//             >
+//               BUY NOW
+//             </Button>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* Login Modal */}
+//       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
+
+//       {/* Receipt Modal */}
+//       <ReceiptModal show={showReceipt} slip={slip} onClose={() => setShowReceipt(false)} />
+//     </div>
+//   );
+// }
 
 
 

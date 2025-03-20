@@ -227,6 +227,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import LoginModal from "@/components/LoginModal"; // import your modal
@@ -239,6 +240,7 @@ const fadeIn = {
 const Footer: React.FC = () => {
   const { data: session } = useSession();
   const [showLogin, setShowLogin] = useState(false);
+    const { connected } = useWallet();
 
   return (
     <footer className="relative overflow-hidden text-white p-8 flex flex-col items-center text-center bg-black/80">
@@ -353,25 +355,26 @@ const Footer: React.FC = () => {
         {session?.user ? (
           // Logged-in user => show Connect Wallet
           <WalletMultiButton
-            style={{
-              fontSize: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-              color: "black",
-              background: "white",
-              border: "none",
-              borderRadius: "50px",
-              cursor: "pointer",
-              transition: "all 0.3s ease-in-out",
-              animation: "heartbeat 1s infinite ease-in-out",
-              padding: "10px 20px",
-              textAlign: "center",
-            }}
-          >
-            CONNECT WALLET
-          </WalletMultiButton>
+          style={{
+            width: "100%",
+            maxWidth: "600px",
+            padding: "16px",
+            color: "black",
+            fontWeight: "bold",
+            background: "#fce2ff",
+            borderRadius: "10px",
+            border: "none",
+            cursor: "pointer",
+            transition: "all 0.3s ease-in-out",
+            fontSize: "clamp(14px, 2vw, 16px)",
+            textAlign: "center",
+            justifyContent: "center",
+            alignItems: "center",
+            display: "flex",
+          }}
+        >
+          {connected ? "CONNECTED" : "CONNECT WALLET"}
+        </WalletMultiButton>
         ) : (
           // Not logged in => show LOGIN button
           <button

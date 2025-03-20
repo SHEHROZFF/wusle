@@ -1,6 +1,8 @@
 // app/layout.jsx
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
+// app/layout.tsx
+import { Toaster } from 'react-hot-toast';
 
 import "./globals.css";
 import ClientProviders from "@/components/ClientProviders";
@@ -29,6 +31,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ClientProviders>{children}</ClientProviders>
+          <Toaster position="top-center" />
         </ThemeProvider>
         </AuthProvider>
       </body>

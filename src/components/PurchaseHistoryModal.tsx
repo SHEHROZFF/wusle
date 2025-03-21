@@ -74,7 +74,7 @@ const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({ show, onClo
           {/* Click outside to close */}
           <div className="absolute inset-0" onClick={onClose}></div>
           <motion.div
-            className="presale-card relative p-6 w-full max-w-3xl bg-gradient-to-br from-[#5b0396]/70 to-[#8e31c5]/70 rounded-lg shadow-2xl z-10 overflow-y-auto max-h-full scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-gray-800 [clip-path:polygon(0% 0%, 100% 0%, 100% 85%, 90% 100%, 10% 100%, 0% 85%)]"
+            className="relative p-6 w-full max-w-3xl bg-gradient-to-br from-[#5b0396]/70 to-[#8e31c5]/70 rounded-lg shadow-2xl z-10 overflow-y-auto max-h-full scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-gray-800 [clip-path:polygon(0% 0%, 100% 0%, 100% 85%, 90% 100%, 10% 100%, 0% 85%)]"
             variants={modalVariants}
             initial="hidden"
             animate="visible"

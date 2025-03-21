@@ -36,7 +36,7 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ show, slip, onClose }) => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="presale-card  relative p-6 w-full max-w-md bg-gradient-to-br from-[#4f0289]/40 to-[#9c23d5]/40 backdrop-blur-xl border border-white/20 ring-1 ring-white/20 text-white flex flex-col shadow-2xl "
+            className="relative p-6 w-full max-w-md bg-gradient-to-br from-[#4f0289]/40 to-[#9c23d5]/40 backdrop-blur-xl border border-white/20 ring-1 ring-white/20 text-white flex flex-col shadow-2xl "
             onClick={(e) => e.stopPropagation()}
           >
             {/* Background image div */}

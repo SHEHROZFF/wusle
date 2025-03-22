@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -41,22 +41,22 @@ import ReceiptModal from "../ReceiptModal";
 /* --------------- Types --------------- */
 interface StageData {
   stageNumber: number;
-  target: number;
-  raised: number;
+  target: number;     // in USDT
+  raised: number;     // how much USDT we have raised so far
   startTime: string;
   endTime: string;
-  rate: number;
+  rate: number;       // USDT per WUSLE
   listingPrice: number;
 }
 
 interface PresaleAPIResponse {
-  stages: StageData[];
-  currentStage: number;
-  endsAt: string;
-  wusleRate: number;
+  stages: StageData[];           // multiple stages
+  currentStage: number;          // which stage is active
+  endsAt: string;                // overall end time
+  wusleRate: number;            // convenience field for the current rate (or matches stage?)
   listingPrice: number;
-  totalWusleSupply: string;
-  liquidityAtLaunch: string;
+  totalWusleSupply: string;     // total token supply for all stages (in WUSLE)
+  liquidityAtLaunch: string;    // some extra display info
 }
 
 interface Countdown {
@@ -71,8 +71,8 @@ interface SlipData {
   userId: string;
   walletAddress: string;
   currency: string;
-  amountPaid: number;
-  wuslePurchased: number;
+  amountPaid: number;       // in USDT or SOL equivalent
+  wuslePurchased: number;   // how many tokens got purchased
   redeemCode: string;
   createdAt: string;
 }
@@ -81,7 +81,7 @@ export default function PresaleInterface() {
   const { data: session } = useSession();
   const { publicKey, connected, sendTransaction } = useWallet();
 
-  // Single mobile breakpoint hook
+  // Single mobile breakpoint hook (e.g. is < 475px wide)
   const isMobile6 = useIsMobile(475);
 
   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
@@ -92,22 +92,39 @@ export default function PresaleInterface() {
     seconds: 0,
   });
   const [progress, setProgress] = useState<number>(0);
-  const [amount, setAmount] = useState<string>("");
+
+  // User’s input
+  const [amount, setAmount] = useState<string>(""); // user typed how much USDT or SOL they want to pay
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USDT");
-  const [wusleAmount, setWusleAmount] = useState<number>(0);
+  const [wusleAmount, setWusleAmount] = useState<number>(0); // how many WUSLE user gets
+
+  // UI states
   const [showLogin, setShowLogin] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [slip, setSlip] = useState<SlipData | null>(null);
+
+  // Stats about how many WUSLE the current user has purchased
   const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(
     null
   );
 
- // 1. READ ENV VARIABLES
- const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC || "https://mainnet.helius-rpc.com/?api-key=5a6666c8-29bd-4e56-ac5d-bd70076a0412";
- const USDT_MINT = process.env.NEXT_PUBLIC_USDT_MINT || "Es9vMFrzaCERaXwz2xQSKz3F8uQDrE17eCJZzz6nA6qT";
- const SOL_RECEIVER = process.env.NEXT_PUBLIC_SOL_RECEIVER || "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G";
+  // For float math
+  const epsilon = 1e-8;
 
-  // Fetch user stats (how much they've spent, etc.)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ENV Vars: connection info, addresses, etc.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const SOLANA_RPC =
+    process.env.NEXT_PUBLIC_SOLANA_RPC ||
+    "https://mainnet.helius-rpc.com/?api-key=5a6666c8-29bd-4e56-ac5d-bd70076a0412";
+  const USDT_MINT =
+    process.env.NEXT_PUBLIC_USDT_MINT || "Es9vMFrzaCERaXwz2xQSKz3F8uQDrE17eCJZzz6nA6qT";
+  const SOL_RECEIVER =
+    process.env.NEXT_PUBLIC_SOL_RECEIVER || "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G";
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 1) Fetch user stats (spent, purchased) after they log in
+  // ─────────────────────────────────────────────────────────────────────────────
   async function refreshUserStats() {
     try {
       const res = await fetch("/api/user");
@@ -129,7 +146,9 @@ export default function PresaleInterface() {
     }
   }, [session]);
 
-  // 2. FETCH PRESALE DATA
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2) Fetch Presale Data from /api/presale
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     async function fetchPresale() {
       try {
@@ -147,37 +166,56 @@ export default function PresaleInterface() {
     }
 
     fetchPresale();
-    // If you want periodic refresh:
+    // Optional: refresh every 30 sec
     // const interval = setInterval(fetchPresale, 30000);
     // return () => clearInterval(interval);
   }, []);
 
-  // 3. UPDATE PROGRESS BAR
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 3) Compute the progress bar
+  //    Because targets and raised are in USDT, we can do:
+  //    progress = totalRaisedSoFar / totalCapInUSDT * 100
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!presaleData) return;
-    const { stages, currentStage } = presaleData;
-    const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+
+    // totalCap = sum of all stage targets (in USDT)
+    const totalCap = presaleData.stages.reduce((acc, s) => acc + s.target, 0);
+
+    // find the active stage
+    const { currentStage, stages } = presaleData;
     const active = stages.find((s) => s.stageNumber === currentStage);
+
     if (!active) {
       setProgress(0);
       return;
     }
+
+    // sum up all fully completed stages + the active stage’s “raised”
     let sumCompleted = 0;
     for (const st of stages) {
-      if (st.stageNumber < currentStage) sumCompleted += st.target;
+      // if this stageNumber is less than the current stageNumber, consider it fully sold => i.e. st.target in USDT
+      if (st.stageNumber < currentStage) {
+        sumCompleted += st.target;
+      }
     }
     const totalRaisedSoFar = sumCompleted + active.raised;
     const frac = (totalRaisedSoFar / totalCap) * 100;
+
     setProgress(Math.min(Math.max(frac, 0), 100));
   }, [presaleData]);
 
-  // 4. COUNTDOWN TIMER
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4) Countdown Timer: only show if not sold out
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!presaleData) return;
-    const endsAt = new Date(presaleData.endsAt).getTime();
+    if (isPresaleOver) return; // if we already consider it sold out, skip the countdown
+
+    const endsAtMs = new Date(presaleData.endsAt).getTime();
     const timer = setInterval(() => {
       const now = Date.now();
-      const diff = endsAt - now;
+      const diff = endsAtMs - now;
       if (diff <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       } else {
@@ -188,51 +226,125 @@ export default function PresaleInterface() {
         setCountdown({ days: d, hours: h, minutes: m, seconds: s });
       }
     }, 1000);
+
     return () => clearInterval(timer);
   }, [presaleData]);
 
-  // 5. CALCULATE WUSLE AMOUNT
-  useEffect(() => {
-    if (!presaleData) return;
-    const rate = presaleData.wusleRate || 0.0037;
-    const val = parseFloat(amount || "0") / rate;
-    setWusleAmount(isNaN(val) ? 0 : val);
-  }, [amount, presaleData]);
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 5) Precisely compute total WUSLE sold so far:
+  //    For each stage:
+  //       tokensSold = raised (USDT) / rate (USDT per WUSLE)
+  //    sum them all
+  // ─────────────────────────────────────────────────────────────────────────────
+  function totalWusleSoldAccurate(): number {
+    if (!presaleData) return 0;
+    let totalSold = 0;
 
-  function getStageMarkers() {
-    if (!presaleData) return [];
-    const { stages, currentStage } = presaleData;
-    if (!stages.length) return [];
-    const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
-    let cumulative = 0;
-    return stages.map((st) => {
-      const pct = (cumulative / totalCap) * 100;
-      cumulative += st.target;
-      let status = "upcoming";
-      if (st.stageNumber < currentStage) {
-        status = "completed";
-      } else if (st.stageNumber === currentStage) {
-        status = "current";
-      }
-      return { pct, label: `${st.stageNumber}`, status };
-    });
+    for (const st of presaleData.stages) {
+      const exactSold = st.raised / st.rate; // => WUSLE sold in that stage
+      const roundedSold = Number(exactSold.toFixed(8)); // keep ~8 decimals
+      totalSold += roundedSold;
+    }
+
+    return Number(totalSold.toFixed(8));
   }
 
-  function stagesTotalRaisedSoFar() {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 6) WUSLE left = totalWusleSupply - totalWusleSold
+  // ─────────────────────────────────────────────────────────────────────────────
+  const wusleLeft = useMemo(() => {
+    if (!presaleData) return 0;
+    const supply = parseFloat(presaleData.totalWusleSupply); // total tokens
+    const sold = totalWusleSoldAccurate();
+    const remaining = supply - sold;
+    const rounded = Number(remaining.toFixed(8));
+    return rounded > 0 ? rounded : 0;
+  }, [presaleData]);
+
+  // Also, how much USDT that leftover is worth:
+  const remainingUsdtValue = useMemo(() => {
+    if (!presaleData) return 0;
+    return Number((wusleLeft * presaleData.wusleRate));
+  }, [wusleLeft, presaleData]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 7) Presale Over? If no WUSLE left => sold out
+  // ─────────────────────────────────────────────────────────────────────────────
+  const isPresaleOver = useMemo(() => {
+    if (!presaleData) return false;
+    return wusleLeft <= epsilon;
+  }, [presaleData, wusleLeft]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 8) Whenever user changes `amount`, recalc how many WUSLE they'd get
+  // ─────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!presaleData) return;
+    const rate = presaleData.wusleRate;
+    const paid = parseFloat(amount || "0");
+    const tokens = paid / rate;
+    setWusleAmount(isNaN(tokens) ? 0 : tokens);
+  }, [amount, presaleData]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 9) Show total USDT raised so far, for the UI
+  //    We do something similar to the progress bar logic,
+  //    but if you want “fully total USDT,” sum all stage.raised
+  // ─────────────────────────────────────────────────────────────────────────────
+  function stagesTotalRaisedSoFar(): number {
     if (!presaleData) return 0;
     const { stages, currentStage } = presaleData;
     const active = stages.find((s) => s.stageNumber === currentStage);
     if (!active) return 0;
+
     let completed = 0;
     for (const st of stages) {
-      if (st.stageNumber < currentStage) completed += st.target;
+      if (st.stageNumber < currentStage) {
+        completed += st.target; // means previous stages fully sold = target USDT
+      }
     }
     return completed + active.raised;
   }
 
-  // 6. HANDLE BUY TRANSACTION
+  // For the stage marker triangles
+  function getStageMarkers() {
+    if (!presaleData) return [];
+    const { stages, currentStage } = presaleData;
+    if (!stages.length) return [];
+
+    const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+    let cumulative = 0;
+
+    return stages.map((s) => {
+      const pct = (cumulative / totalCap) * 100;
+      cumulative += s.target;
+
+      let status: "completed" | "current" | "upcoming" = "upcoming";
+      if (s.stageNumber < currentStage) {
+        status = "completed";
+      } else if (s.stageNumber === currentStage) {
+        status = "current";
+      }
+
+      return { pct, label: `${s.stageNumber}`, status };
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 10) handleBuyNow: main purchase logic
+  // ─────────────────────────────────────────────────────────────────────────────
   async function handleBuyNow() {
     try {
+      if (!presaleData) {
+        toast.error("Presale data not loaded yet.");
+        return;
+      }
+
+      if (isPresaleOver) {
+        toast.error("Presale is sold out. No more WUSLE left to grab!");
+        return;
+      }
+
       if (!session?.user) {
         toast.error("Please log in before buying. We have WUSLE, but we also like security!");
         return;
@@ -248,16 +360,38 @@ export default function PresaleInterface() {
         return;
       }
 
-      // Solana connection
+      // Double-check how many tokens remain
+      const totalSupply = parseFloat(presaleData.totalWusleSupply);
+      const totalSold = totalWusleSoldAccurate();
+      const actualWusleLeft = totalSupply - totalSold;
+      if (actualWusleLeft <= epsilon) {
+        toast.error("WUSLE supply exhausted. Presale is sold out.");
+        return;
+      }
+
+      // The max user can pay to buy the leftover tokens in USDT
+      const maxPayable = actualWusleLeft * presaleData.wusleRate;
+      if (paid > maxPayable + epsilon) {
+        toast.error(
+          `Only ~${actualWusleLeft.toFixed(4)} WUSLE left (max ${maxPayable} ${selectedCurrency}).`
+        );
+        return;
+      }
+
+      // Also if user tries to get more tokens than remain
+      if (wusleAmount > actualWusleLeft + epsilon) {
+        toast.error(`Only ${actualWusleLeft.toFixed(4)} WUSLE left. Reduce your purchase amount.`);
+        return;
+      }
+
+      // ───── Prepare to send transaction on Solana ─────
       const connection = new Connection(SOLANA_RPC, "confirmed");
       let txSignature = "";
 
-      // Preliminary checks to ensure user has enough balance (optional, commented out for brevity)
-
+      // A) If paying with SOL
       if (selectedCurrency === "SOL") {
-        // Build & send SOL transaction
-        const receiverPubkey = new PublicKey(SOL_RECEIVER);
         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
+        const receiverPubkey = new PublicKey(SOL_RECEIVER);
 
         try {
           const transaction = new Transaction().add(
@@ -277,24 +411,25 @@ export default function PresaleInterface() {
           }
           return;
         }
-      } else if (selectedCurrency === "USDT") {
-        // Build & send USDT transaction
+      }
+      // B) If paying with USDT
+      else {
         try {
           const usdtMintPubKey = new PublicKey(USDT_MINT);
           const recipientPubkey = new PublicKey(SOL_RECEIVER);
 
+          // sender’s token account
           const senderUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, publicKey);
-          const recipientUsdtATA = await getAssociatedTokenAddress(
-            usdtMintPubKey,
-            recipientPubkey
-          );
+          // recipient’s token account
+          const recipientUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, recipientPubkey);
 
-          const usdtDecimals = 6; 
+          const usdtDecimals = 6;
           const amountInSmallestUnits = Math.floor(paid * 10 ** usdtDecimals);
 
           const transaction = new Transaction();
           const recipientATAInfo = await connection.getAccountInfo(recipientUsdtATA);
 
+          // Ensure the receiver has a token account for USDT
           if (!recipientATAInfo) {
             transaction.add(
               createAssociatedTokenAccountInstruction(
@@ -306,6 +441,7 @@ export default function PresaleInterface() {
             );
           }
 
+          // Transfer USDT
           transaction.add(
             createTransferInstruction(
               senderUsdtATA,
@@ -335,7 +471,9 @@ export default function PresaleInterface() {
         }
       }
 
-      // 7. CONFIRM TRANSACTION
+      // ─────────────────────────────────────────────────────────────────────────
+      // Confirm the transaction on-chain
+      // ─────────────────────────────────────────────────────────────────────────
       try {
         const latestBlockHash = await connection.getLatestBlockhash();
         const confirmationResult = await connection.confirmTransaction({
@@ -345,18 +483,20 @@ export default function PresaleInterface() {
         });
 
         if (confirmationResult.value.err) {
-          toast.error("Transaction not confirmed on-chain. Please check your wallet or explorer.");
+          toast.error("Transaction not confirmed on-chain. Check your wallet or explorer.");
           return;
         }
       } catch (err: any) {
         console.error("Transaction confirmation error:", err);
-        toast.error("Transaction broadcasted, but confirmation failed. Check your wallet or Solana explorer.");
+        toast.error("Transaction broadcasted, but confirmation failed. Check explorer.");
         return;
       }
 
       toast.success(`${selectedCurrency} transaction confirmed! Tx: ${txSignature.slice(0, 16)}...`);
 
-      // 8. CREATE SERVER-SIDE SLIP RECORD
+      // ─────────────────────────────────────────────────────────────────────────
+      // 8) Create server-side slip record, update DB
+      // ─────────────────────────────────────────────────────────────────────────
       try {
         const res = await fetch("/api/slip/buy", {
           method: "POST",
@@ -374,13 +514,15 @@ export default function PresaleInterface() {
         if (res.ok) {
           setSlip(data.slip);
           setShowReceipt(true);
-          refreshUserStats(); // Refresh user stats after purchase
+
+          // re-fetch user stats
+          refreshUserStats();
         } else {
           toast.error(data.error || "Error creating slip on the server. Our apologies!");
         }
       } catch (serverErr: any) {
         console.error("Slip creation error:", serverErr);
-        toast.error("Purchase transaction succeeded, but slip creation failed on server.");
+        toast.error("Purchase succeeded, but slip creation failed on server.");
       }
     } catch (outerErr: any) {
       console.error("handleBuyNow outer error:", outerErr);
@@ -388,6 +530,9 @@ export default function PresaleInterface() {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 11) Render: the UI
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="relative w-full py-4 max-w-[600px] mx-auto bg-gradient-to-br from-purple-900 to-purple-500 rounded-lg transition-all duration-300">
@@ -398,7 +543,9 @@ export default function PresaleInterface() {
           </h2>
           {presaleData && (
             <>
-              <h2 className="font-bold text-lg sm:text-xl uppercase text-white">IS NOW LIVE!</h2>
+              <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+                IS NOW LIVE!
+              </h2>
               <h3 className="font-bold text-md sm:text-xl mt-1 text-white">
                 STAGE {presaleData.currentStage}/{presaleData.stages.length}
               </h3>
@@ -410,13 +557,13 @@ export default function PresaleInterface() {
         </div>
 
         {/* Countdown */}
-        {presaleData ? (
+        {presaleData && !isPresaleOver ? (
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-black mx-4 md:mx-8">
             {["days", "hours", "minutes", "seconds"].map((unit) => (
               <div key={unit} className="flex flex-col items-center">
                 <div className="bg-white/40 text-white rounded-lg hover:bg-white/20 transition flex flex-col items-center justify-center w-[70px] h-[60px] sm:w-[90px] sm:h-[70px] md:w-[100px] md:h-[80px] lg:w-[120px] lg:h-[100px]">
                   <span className="font-bold text-xl sm:text-2xl md:text-3xl">
-                    {countdown[unit as keyof typeof countdown]}
+                    {countdown[unit as keyof Countdown]}
                   </span>
                   <span className="text-white text-sm sm:text-base uppercase mt-2">
                     {unit === "days"
@@ -431,8 +578,14 @@ export default function PresaleInterface() {
               </div>
             ))}
           </div>
+        ) : presaleData && isPresaleOver ? (
+          <p className="text-center text-white mt-2 font-bold text-lg">
+            🎉 Presale Sold Out
+          </p>
         ) : (
-          <p className="text-center text-white mt-2">Loading Presale Data...</p>
+          <p className="text-center text-white mt-2">
+            Loading Presale Data...
+          </p>
         )}
 
         {/* Progress & Stage Markers */}
@@ -440,12 +593,12 @@ export default function PresaleInterface() {
           <div className="relative px-2">
             <div className="relative w-full h-8 mb-0">
               {presaleData &&
-                getStageMarkers().map((m, idx) => {
+                getStageMarkers().map((marker, idx) => {
                   let arrowColor, textColor;
-                  if (m.status === "completed") {
+                  if (marker.status === "completed") {
                     arrowColor = "border-t-green-500";
                     textColor = "text-green-500";
-                  } else if (m.status === "current") {
+                  } else if (marker.status === "current") {
                     arrowColor = "border-t-yellow-500";
                     textColor = "text-yellow-500";
                   } else {
@@ -456,9 +609,11 @@ export default function PresaleInterface() {
                     <div
                       key={idx}
                       className="absolute flex flex-col items-center"
-                      style={{ left: `calc(${m.pct}% - 8px)` }}
+                      style={{ left: `calc(${marker.pct}% - 8px)` }}
                     >
-                      <span className={`text-xs font-bold mb-1 ${textColor}`}>{m.label}</span>
+                      <span className={`text-xs font-bold mb-1 ${textColor}`}>
+                        {marker.label}
+                      </span>
                       <div
                         className={`${
                           isMobile6 ? "w-2 h-1" : "w-3 h-1"
@@ -481,25 +636,39 @@ export default function PresaleInterface() {
           </div>
         </div>
 
+        {/* WUSLE Left (not sold out) */}
+        {presaleData && !isPresaleOver && (
+          <div className="text-center mt-2 text-white text-sm sm:text-base">
+            <p>
+              Only <span className="font-bold">{wusleLeft.toFixed(4)} WUSLE</span> left (~
+              <span className="font-bold"> {remainingUsdtValue} USDT</span>)
+            </p>
+          </div>
+        )}
+
         {/* WUSLE Sold / USDT Raised */}
         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">
           <div className="flex justify-between items-center">
-            <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">WUSLE SOLD</span>
+            <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">
+              WUSLE SOLD
+            </span>
             <span className="text-white text-xs sm:text-base md:text-md lg:text-lg">
+              {/* totalWusleSoldAccurate for tokens sold */}
               {presaleData
-                ? (
-                    stagesTotalRaisedSoFar() / (presaleData.wusleRate || 0.0037)
-                  ).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                ? totalWusleSoldAccurate().toLocaleString(undefined, { maximumFractionDigits: 4 })
                 : 0}{" "}
               / {presaleData ? presaleData.totalWusleSupply : 0}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-white text-xs sm:text-sm md:text-sm">
-              USDT RAISED
-            </span>
+            <span className="text-white text-xs sm:text-sm md:text-sm">USDT RAISED</span>
             <span className="text-white text-xs sm:text-sm md:text-sm lg:text-lg">
-              ${presaleData ? stagesTotalRaisedSoFar().toLocaleString() : "0"}
+              $
+              {presaleData
+                ? stagesTotalRaisedSoFar().toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })
+                : "0"}
             </span>
           </div>
         </div>
@@ -598,6 +767,7 @@ export default function PresaleInterface() {
 
         {/* Connect Wallet / Buy Section */}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
+          {/* If user not logged in, show our "CONNECT YOUR WALLET" button => Actually it's a login */}
           {!session?.user ? (
             <Button
               onClick={() => setShowLogin(true)}
@@ -632,9 +802,10 @@ export default function PresaleInterface() {
           {session?.user && publicKey && connected && (
             <Button
               onClick={handleBuyNow}
+              disabled={isPresaleOver || parseFloat(amount || "0") <= 0}
               className="w-1/3 px-8 py-6 text-black font-bold bg-pink-100 hover:bg-white/80 rounded-lg text-sm sm:text-base md:text-lg"
             >
-              BUY NOW
+              {isPresaleOver ? "SOLD OUT" : "BUY NOW"}
             </Button>
           )}
         </div>
@@ -648,10 +819,6 @@ export default function PresaleInterface() {
     </div>
   );
 }
-
-
-
-
 
 
 

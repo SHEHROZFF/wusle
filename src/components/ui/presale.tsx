@@ -41,22 +41,22 @@ import ReceiptModal from "../ReceiptModal";
 /* --------------- Types --------------- */
 interface StageData {
   stageNumber: number;
-  target: number;     // in USDT
-  raised: number;     // how much USDT we have raised so far
+  target: number; // USDT
+  raised: number; // USDT already raised
   startTime: string;
   endTime: string;
-  rate: number;       // USDT per WUSLE
+  rate: number;    // USDT per WUSLE
   listingPrice: number;
 }
 
 interface PresaleAPIResponse {
-  stages: StageData[];           // multiple stages
-  currentStage: number;          // which stage is active
-  endsAt: string;                // overall end time
-  wusleRate: number;            // convenience field for the current rate (or matches stage?)
+  stages: StageData[];
+  currentStage: number;
+  endsAt: string;
+  wusleRate: number;
   listingPrice: number;
-  totalWusleSupply: string;     // total token supply for all stages (in WUSLE)
-  liquidityAtLaunch: string;    // some extra display info
+  totalWusleSupply: string;
+  liquidityAtLaunch: string;
 }
 
 interface Countdown {
@@ -71,8 +71,8 @@ interface SlipData {
   userId: string;
   walletAddress: string;
   currency: string;
-  amountPaid: number;       // in USDT or SOL equivalent
-  wuslePurchased: number;   // how many tokens got purchased
+  amountPaid: number;
+  wuslePurchased: number;
   redeemCode: string;
   createdAt: string;
 }
@@ -80,40 +80,29 @@ interface SlipData {
 export default function PresaleInterface() {
   const { data: session } = useSession();
   const { publicKey, connected, sendTransaction } = useWallet();
-
-  // Single mobile breakpoint hook (e.g. is < 475px wide)
   const isMobile6 = useIsMobile(475);
 
   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
-  const [countdown, setCountdown] = useState<Countdown>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
+  const [countdown, setCountdown] = useState<Countdown>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [progress, setProgress] = useState<number>(0);
 
-  // User’s input
-  const [amount, setAmount] = useState<string>(""); // user typed how much USDT or SOL they want to pay
+  // Payment input
+  const [amount, setAmount] = useState<string>("");
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USDT");
-  const [wusleAmount, setWusleAmount] = useState<number>(0); // how many WUSLE user gets
+  const [wusleAmount, setWusleAmount] = useState<number>(0);
 
-  // UI states
+  // Additional UI states
   const [showLogin, setShowLogin] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [slip, setSlip] = useState<SlipData | null>(null);
+  const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(null);
 
-  // Stats about how many WUSLE the current user has purchased
-  const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(
-    null
-  );
+  const [isSlipGenerating, setIsSlipGenerating] = useState(false); // overlay state
 
-  // For float math
+  // For small float checks
   const epsilon = 1e-8;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // ENV Vars: connection info, addresses, etc.
-  // ─────────────────────────────────────────────────────────────────────────────
+  // Env
   const SOLANA_RPC =
     process.env.NEXT_PUBLIC_SOLANA_RPC ||
     "https://mainnet.helius-rpc.com/?api-key=5a6666c8-29bd-4e56-ac5d-bd70076a0412";
@@ -122,9 +111,9 @@ export default function PresaleInterface() {
   const SOL_RECEIVER =
     process.env.NEXT_PUBLIC_SOL_RECEIVER || "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G";
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 1) Fetch user stats (spent, purchased) after they log in
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 1) Fetch user stats
+  // ──────────────────────────────────────────────────────────────────────────
   async function refreshUserStats() {
     try {
       const res = await fetch("/api/user");
@@ -134,8 +123,8 @@ export default function PresaleInterface() {
       } else {
         toast.error(data.error || "Error fetching user stats");
       }
-    } catch (error) {
-      console.error("Error fetching user stats:", error);
+    } catch (err) {
+      console.error("Error fetching user stats:", err);
       toast.error("Unable to fetch user stats. The gremlins must be at play!");
     }
   }
@@ -146,9 +135,9 @@ export default function PresaleInterface() {
     }
   }, [session]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 2) Fetch Presale Data from /api/presale
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 2) Fetch Presale Data
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     async function fetchPresale() {
       try {
@@ -166,51 +155,39 @@ export default function PresaleInterface() {
     }
 
     fetchPresale();
-    // Optional: refresh every 30 sec
+    // optional periodic refresh
     // const interval = setInterval(fetchPresale, 30000);
     // return () => clearInterval(interval);
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 3) Compute the progress bar
-  //    Because targets and raised are in USDT, we can do:
-  //    progress = totalRaisedSoFar / totalCapInUSDT * 100
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 3) Progress Bar Calculation
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!presaleData) return;
-
-    // totalCap = sum of all stage targets (in USDT)
     const totalCap = presaleData.stages.reduce((acc, s) => acc + s.target, 0);
-
-    // find the active stage
-    const { currentStage, stages } = presaleData;
-    const active = stages.find((s) => s.stageNumber === currentStage);
+    const active = presaleData.stages.find((s) => s.stageNumber === presaleData.currentStage);
 
     if (!active) {
       setProgress(0);
       return;
     }
 
-    // sum up all fully completed stages + the active stage’s “raised”
     let sumCompleted = 0;
-    for (const st of stages) {
-      // if this stageNumber is less than the current stageNumber, consider it fully sold => i.e. st.target in USDT
-      if (st.stageNumber < currentStage) {
-        sumCompleted += st.target;
-      }
+    for (const st of presaleData.stages) {
+      if (st.stageNumber < presaleData.currentStage) sumCompleted += st.target;
     }
     const totalRaisedSoFar = sumCompleted + active.raised;
     const frac = (totalRaisedSoFar / totalCap) * 100;
-
     setProgress(Math.min(Math.max(frac, 0), 100));
   }, [presaleData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 4) Countdown Timer: only show if not sold out
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 4) Countdown Timer
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!presaleData) return;
-    if (isPresaleOver) return; // if we already consider it sold out, skip the countdown
+    if (isPresaleOver) return;
 
     const endsAtMs = new Date(presaleData.endsAt).getTime();
     const timer = setInterval(() => {
@@ -230,54 +207,48 @@ export default function PresaleInterface() {
     return () => clearInterval(timer);
   }, [presaleData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 5) Precisely compute total WUSLE sold so far:
-  //    For each stage:
-  //       tokensSold = raised (USDT) / rate (USDT per WUSLE)
-  //    sum them all
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 5) Precisely compute total WUSLE sold
+  // ──────────────────────────────────────────────────────────────────────────
   function totalWusleSoldAccurate(): number {
     if (!presaleData) return 0;
     let totalSold = 0;
-
     for (const st of presaleData.stages) {
-      const exactSold = st.raised / st.rate; // => WUSLE sold in that stage
-      const roundedSold = Number(exactSold.toFixed(8)); // keep ~8 decimals
-      totalSold += roundedSold;
+      const tokensSold = st.raised / st.rate;
+      totalSold += Number(tokensSold.toFixed(8));
     }
-
     return Number(totalSold.toFixed(8));
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 6) WUSLE left = totalWusleSupply - totalWusleSold
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 6) WUSLE Left
+  // ──────────────────────────────────────────────────────────────────────────
   const wusleLeft = useMemo(() => {
     if (!presaleData) return 0;
-    const supply = parseFloat(presaleData.totalWusleSupply); // total tokens
+    const supply = parseFloat(presaleData.totalWusleSupply);
     const sold = totalWusleSoldAccurate();
-    const remaining = supply - sold;
-    const rounded = Number(remaining.toFixed(8));
-    return rounded > 0 ? rounded : 0;
+    const leftover = supply - sold;
+    const r = Number(leftover.toFixed(8));
+    return r > 0 ? r : 0;
   }, [presaleData]);
 
-  // Also, how much USDT that leftover is worth:
   const remainingUsdtValue = useMemo(() => {
     if (!presaleData) return 0;
-    return Number((wusleLeft * presaleData.wusleRate));
+    const val = wusleLeft * presaleData.wusleRate;
+    return Number(val.toFixed(4));
   }, [wusleLeft, presaleData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 7) Presale Over? If no WUSLE left => sold out
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 7) Is Presale Over?
+  // ──────────────────────────────────────────────────────────────────────────
   const isPresaleOver = useMemo(() => {
     if (!presaleData) return false;
     return wusleLeft <= epsilon;
   }, [presaleData, wusleLeft]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 8) Whenever user changes `amount`, recalc how many WUSLE they'd get
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 8) Recompute the WUSLE user gets when they type an amount
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!presaleData) return;
     const rate = presaleData.wusleRate;
@@ -286,11 +257,9 @@ export default function PresaleInterface() {
     setWusleAmount(isNaN(tokens) ? 0 : tokens);
   }, [amount, presaleData]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 9) Show total USDT raised so far, for the UI
-  //    We do something similar to the progress bar logic,
-  //    but if you want “fully total USDT,” sum all stage.raised
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 9) USDT raised so far
+  // ──────────────────────────────────────────────────────────────────────────
   function stagesTotalRaisedSoFar(): number {
     if (!presaleData) return 0;
     const { stages, currentStage } = presaleData;
@@ -300,99 +269,86 @@ export default function PresaleInterface() {
     let completed = 0;
     for (const st of stages) {
       if (st.stageNumber < currentStage) {
-        completed += st.target; // means previous stages fully sold = target USDT
+        completed += st.target; // previous stage = fully sold
       }
     }
     return completed + active.raised;
   }
 
-  // For the stage marker triangles
+  // For progress bar stage markers
   function getStageMarkers() {
     if (!presaleData) return [];
     const { stages, currentStage } = presaleData;
-    if (!stages.length) return [];
-
     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
     let cumulative = 0;
 
-    return stages.map((s) => {
+    return stages.map((st) => {
       const pct = (cumulative / totalCap) * 100;
-      cumulative += s.target;
+      cumulative += st.target;
 
       let status: "completed" | "current" | "upcoming" = "upcoming";
-      if (s.stageNumber < currentStage) {
+      if (st.stageNumber < currentStage) {
         status = "completed";
-      } else if (s.stageNumber === currentStage) {
+      } else if (st.stageNumber === currentStage) {
         status = "current";
       }
-
-      return { pct, label: `${s.stageNumber}`, status };
+      return { pct, label: `${st.stageNumber}`, status };
     });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 10) handleBuyNow: main purchase logic
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 10) handleBuyNow
+  // ──────────────────────────────────────────────────────────────────────────
   async function handleBuyNow() {
     try {
       if (!presaleData) {
-        toast.error("Presale data not loaded yet.");
+        toast.error("Presale data not loaded.");
         return;
       }
-
       if (isPresaleOver) {
-        toast.error("Presale is sold out. No more WUSLE left to grab!");
+        toast.error("Presale sold out!");
         return;
       }
-
       if (!session?.user) {
-        toast.error("Please log in before buying. We have WUSLE, but we also like security!");
+        toast.error("Please log in first!");
         return;
       }
       if (!publicKey || !connected) {
-        toast.error("Connect your wallet first. The blockchain awaits!");
+        toast.error("Connect your wallet first!");
         return;
       }
 
       const paid = parseFloat(amount || "0");
       if (paid <= 0) {
-        toast.error("Enter a valid amount. Zero won't buy you any WUSLE!");
+        toast.error("Enter a valid amount!");
         return;
       }
 
-      // Double-check how many tokens remain
       const totalSupply = parseFloat(presaleData.totalWusleSupply);
       const totalSold = totalWusleSoldAccurate();
-      const actualWusleLeft = totalSupply - totalSold;
-      if (actualWusleLeft <= epsilon) {
-        toast.error("WUSLE supply exhausted. Presale is sold out.");
+      const leftover = totalSupply - totalSold;
+      if (leftover <= epsilon) {
+        toast.error("All tokens sold out!");
         return;
       }
 
-      // The max user can pay to buy the leftover tokens in USDT
-      const maxPayable = actualWusleLeft * presaleData.wusleRate;
+      const maxPayable = leftover * presaleData.wusleRate;
       if (paid > maxPayable + epsilon) {
-        toast.error(
-          `Only ~${actualWusleLeft.toFixed(4)} WUSLE left (max ${maxPayable} ${selectedCurrency}).`
-        );
+        toast.error(`Only ${leftover.toFixed(4)} tokens left => max ${maxPayable.toFixed(4)} USDT`);
+        return;
+      }
+      if (wusleAmount > leftover + epsilon) {
+        toast.error(`Only ${leftover.toFixed(4)} WUSLE left. Reduce amount.`);
         return;
       }
 
-      // Also if user tries to get more tokens than remain
-      if (wusleAmount > actualWusleLeft + epsilon) {
-        toast.error(`Only ${actualWusleLeft.toFixed(4)} WUSLE left. Reduce your purchase amount.`);
-        return;
-      }
-
-      // ───── Prepare to send transaction on Solana ─────
+      // 1) Send transaction
       const connection = new Connection(SOLANA_RPC, "confirmed");
       let txSignature = "";
 
-      // A) If paying with SOL
       if (selectedCurrency === "SOL") {
         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
         const receiverPubkey = new PublicKey(SOL_RECEIVER);
-
         try {
           const transaction = new Transaction().add(
             SystemProgram.transfer({
@@ -403,33 +359,28 @@ export default function PresaleInterface() {
           );
           txSignature = await sendTransaction(transaction, connection);
         } catch (err: any) {
-          if (err?.message?.includes("User rejected the request")) {
-            toast.error("Transaction cancelled by user.");
+          if (err?.message?.includes("User rejected")) {
+            toast.error("User rejected transaction");
           } else {
-            toast.error("Failed to send SOL transaction. Double-check wallet or network.");
-            console.error("SOL Transaction Error:", err);
+            toast.error("SOL transaction failed");
+            console.error(err);
           }
           return;
         }
-      }
-      // B) If paying with USDT
-      else {
+      } else {
+        // USDT
         try {
           const usdtMintPubKey = new PublicKey(USDT_MINT);
           const recipientPubkey = new PublicKey(SOL_RECEIVER);
 
-          // sender’s token account
           const senderUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, publicKey);
-          // recipient’s token account
           const recipientUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, recipientPubkey);
 
           const usdtDecimals = 6;
-          const amountInSmallestUnits = Math.floor(paid * 10 ** usdtDecimals);
+          const amtInSmallestUnits = Math.floor(paid * 10 ** usdtDecimals);
 
           const transaction = new Transaction();
           const recipientATAInfo = await connection.getAccountInfo(recipientUsdtATA);
-
-          // Ensure the receiver has a token account for USDT
           if (!recipientATAInfo) {
             transaction.add(
               createAssociatedTokenAccountInstruction(
@@ -440,63 +391,56 @@ export default function PresaleInterface() {
               )
             );
           }
-
-          // Transfer USDT
           transaction.add(
             createTransferInstruction(
               senderUsdtATA,
               recipientUsdtATA,
               publicKey,
-              amountInSmallestUnits,
+              amtInSmallestUnits,
               [],
               TOKEN_PROGRAM_ID
             )
           );
-
           try {
             txSignature = await sendTransaction(transaction, connection);
           } catch (err: any) {
-            if (err?.message?.includes("User rejected the request")) {
-              toast.error("Transaction cancelled by user.");
+            if (err?.message?.includes("User rejected")) {
+              toast.error("User rejected transaction");
             } else {
-              toast.error("Failed to send USDT transaction. Double-check wallet or network.");
-              console.error("❌ USDT Transaction Error:", err);
+              toast.error("USDT transaction failed");
+              console.error(err);
             }
             return;
           }
         } catch (err: any) {
-          console.error("❌ USDT Setup Error:", err);
-          toast.error("Something went wrong preparing the USDT transaction.");
+          toast.error("Preparing USDT transaction failed");
+          console.error(err);
           return;
         }
       }
 
-      // ─────────────────────────────────────────────────────────────────────────
-      // Confirm the transaction on-chain
-      // ─────────────────────────────────────────────────────────────────────────
+      // 2) Confirm transaction
       try {
         const latestBlockHash = await connection.getLatestBlockhash();
-        const confirmationResult = await connection.confirmTransaction({
+        const confirmation = await connection.confirmTransaction({
           signature: txSignature,
           blockhash: latestBlockHash.blockhash,
           lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
         });
-
-        if (confirmationResult.value.err) {
-          toast.error("Transaction not confirmed on-chain. Check your wallet or explorer.");
+        if (confirmation.value.err) {
+          toast.error("Transaction not confirmed on-chain");
           return;
         }
       } catch (err: any) {
-        console.error("Transaction confirmation error:", err);
-        toast.error("Transaction broadcasted, but confirmation failed. Check explorer.");
+        toast.error("Broadcasted but not confirmed");
+        console.error(err);
         return;
       }
 
-      toast.success(`${selectedCurrency} transaction confirmed! Tx: ${txSignature.slice(0, 16)}...`);
+      toast.success(`${selectedCurrency} tx confirmed! Tx: ${txSignature.slice(0, 16)}...`);
 
-      // ─────────────────────────────────────────────────────────────────────────
-      // 8) Create server-side slip record, update DB
-      // ─────────────────────────────────────────────────────────────────────────
+      // 3) Slip generation
+      setIsSlipGenerating(true);
       try {
         const res = await fetch("/api/slip/buy", {
           method: "POST",
@@ -510,31 +454,40 @@ export default function PresaleInterface() {
           }),
         });
         const data = await res.json();
-
         if (res.ok) {
           setSlip(data.slip);
           setShowReceipt(true);
-
-          // re-fetch user stats
           refreshUserStats();
         } else {
-          toast.error(data.error || "Error creating slip on the server. Our apologies!");
+          toast.error(data.error || "Slip creation error on server");
         }
-      } catch (serverErr: any) {
-        console.error("Slip creation error:", serverErr);
-        toast.error("Purchase succeeded, but slip creation failed on server.");
+      } catch (err: any) {
+        console.error("Slip creation error:", err);
+        toast.error("Slip creation failed on server");
+      } finally {
+        setIsSlipGenerating(false);
       }
     } catch (outerErr: any) {
-      console.error("handleBuyNow outer error:", outerErr);
-      toast.error("Uh oh, something unexpected happened. See console for details.");
+      toast.error("Unexpected error, check console");
+      console.error(outerErr);
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 11) Render: the UI
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // 11) Render
+  // ──────────────────────────────────────────────────────────────────────────
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
+      {/* Full-screen overlay if slip is generating */}
+      {isSlipGenerating && (
+        <div className="fixed top-0 w-screen h-screen  z-[99999999999] flex items-center justify-center">
+          <div className="bg-white text-black font-bold px-6 py-4 rounded-md shadow-md">
+            <p className="text-lg">Generating your slip...</p>
+            <p className="text-sm mt-1">Please wait, do not reload or navigate away.Otherwisre you will lose your slip</p>
+          </div>
+        </div>
+      )}
+
       <div className="relative w-full py-4 max-w-[600px] mx-auto bg-gradient-to-br from-purple-900 to-purple-500 rounded-lg transition-all duration-300">
         {/* Title / Stage Info */}
         <div className="text-center mt-2">
@@ -583,9 +536,7 @@ export default function PresaleInterface() {
             🎉 Presale Sold Out
           </p>
         ) : (
-          <p className="text-center text-white mt-2">
-            Loading Presale Data...
-          </p>
+          <p className="text-center text-white mt-2">Loading Presale Data...</p>
         )}
 
         {/* Progress & Stage Markers */}
@@ -593,12 +544,12 @@ export default function PresaleInterface() {
           <div className="relative px-2">
             <div className="relative w-full h-8 mb-0">
               {presaleData &&
-                getStageMarkers().map((marker, idx) => {
+                getStageMarkers().map((m, idx) => {
                   let arrowColor, textColor;
-                  if (marker.status === "completed") {
+                  if (m.status === "completed") {
                     arrowColor = "border-t-green-500";
                     textColor = "text-green-500";
-                  } else if (marker.status === "current") {
+                  } else if (m.status === "current") {
                     arrowColor = "border-t-yellow-500";
                     textColor = "text-yellow-500";
                   } else {
@@ -609,11 +560,9 @@ export default function PresaleInterface() {
                     <div
                       key={idx}
                       className="absolute flex flex-col items-center"
-                      style={{ left: `calc(${marker.pct}% - 8px)` }}
+                      style={{ left: `calc(${m.pct}% - 8px)` }}
                     >
-                      <span className={`text-xs font-bold mb-1 ${textColor}`}>
-                        {marker.label}
-                      </span>
+                      <span className={`text-xs font-bold mb-1 ${textColor}`}>{m.label}</span>
                       <div
                         className={`${
                           isMobile6 ? "w-2 h-1" : "w-3 h-1"
@@ -636,12 +585,12 @@ export default function PresaleInterface() {
           </div>
         </div>
 
-        {/* WUSLE Left (not sold out) */}
+        {/* WUSLE Left */}
         {presaleData && !isPresaleOver && (
           <div className="text-center mt-2 text-white text-sm sm:text-base">
             <p>
               Only <span className="font-bold">{wusleLeft.toFixed(4)} WUSLE</span> left (~
-              <span className="font-bold"> {remainingUsdtValue} USDT</span>)
+              <span className="font-bold"> {remainingUsdtValue.toFixed(4)} USDT</span>)
             </p>
           </div>
         )}
@@ -649,11 +598,8 @@ export default function PresaleInterface() {
         {/* WUSLE Sold / USDT Raised */}
         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">
           <div className="flex justify-between items-center">
-            <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">
-              WUSLE SOLD
-            </span>
+            <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">WUSLE SOLD</span>
             <span className="text-white text-xs sm:text-base md:text-md lg:text-lg">
-              {/* totalWusleSoldAccurate for tokens sold */}
               {presaleData
                 ? totalWusleSoldAccurate().toLocaleString(undefined, { maximumFractionDigits: 4 })
                 : 0}{" "}
@@ -767,7 +713,6 @@ export default function PresaleInterface() {
 
         {/* Connect Wallet / Buy Section */}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
-          {/* If user not logged in, show our "CONNECT YOUR WALLET" button => Actually it's a login */}
           {!session?.user ? (
             <Button
               onClick={() => setShowLogin(true)}
@@ -802,7 +747,11 @@ export default function PresaleInterface() {
           {session?.user && publicKey && connected && (
             <Button
               onClick={handleBuyNow}
-              disabled={isPresaleOver || parseFloat(amount || "0") <= 0}
+              disabled={
+                isPresaleOver ||
+                parseFloat(amount || "0") <= 0 ||
+                isSlipGenerating
+              }
               className="w-1/3 px-8 py-6 text-black font-bold bg-pink-100 hover:bg-white/80 rounded-lg text-sm sm:text-base md:text-lg"
             >
               {isPresaleOver ? "SOLD OUT" : "BUY NOW"}
@@ -819,6 +768,836 @@ export default function PresaleInterface() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+// "use client";
+
+// import { useState, useEffect, useMemo } from "react";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import Image from "next/image";
+// import { motion, AnimatePresence } from "framer-motion";
+// import Usdt from "../../assets/Images/usdt.png";
+// import Sol from "../../assets/Images/sol.png";
+// import Wusle from "../../assets/Images/logo.jpeg";
+
+// import { toast } from "react-hot-toast";
+
+// import { useWallet } from "@solana/wallet-adapter-react";
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// import { useSession } from "next-auth/react";
+// import LoginModal from "@/components/LoginModal";
+// import dynamic from "next/dynamic";
+// import { useIsMobile } from "@/hooks/useIsMobile";
+
+// const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+// import lottieAnimation from "@/assets/Images/wave.json";
+
+// import {
+//   Connection,
+//   SystemProgram,
+//   Transaction,
+//   PublicKey,
+//   LAMPORTS_PER_SOL,
+// } from "@solana/web3.js";
+
+// import {
+//   getAssociatedTokenAddress,
+//   createTransferInstruction,
+//   createAssociatedTokenAccountInstruction,
+//   TOKEN_PROGRAM_ID,
+// } from "@solana/spl-token";
+
+// import ReceiptModal from "../ReceiptModal";
+
+// /* --------------- Types --------------- */
+// interface StageData {
+//   stageNumber: number;
+//   target: number;     // in USDT
+//   raised: number;     // how much USDT we have raised so far
+//   startTime: string;
+//   endTime: string;
+//   rate: number;       // USDT per WUSLE
+//   listingPrice: number;
+// }
+
+// interface PresaleAPIResponse {
+//   stages: StageData[];           // multiple stages
+//   currentStage: number;          // which stage is active
+//   endsAt: string;                // overall end time
+//   wusleRate: number;            // convenience field for the current rate (or matches stage?)
+//   listingPrice: number;
+//   totalWusleSupply: string;     // total token supply for all stages (in WUSLE)
+//   liquidityAtLaunch: string;    // some extra display info
+// }
+
+// interface Countdown {
+//   days: number;
+//   hours: number;
+//   minutes: number;
+//   seconds: number;
+// }
+
+// interface SlipData {
+//   id: string;
+//   userId: string;
+//   walletAddress: string;
+//   currency: string;
+//   amountPaid: number;       // in USDT or SOL equivalent
+//   wuslePurchased: number;   // how many tokens got purchased
+//   redeemCode: string;
+//   createdAt: string;
+// }
+
+// export default function PresaleInterface() {
+//   const { data: session } = useSession();
+//   const { publicKey, connected, sendTransaction } = useWallet();
+
+//   // Single mobile breakpoint hook (e.g. is < 475px wide)
+//   const isMobile6 = useIsMobile(475);
+
+//   const [presaleData, setPresaleData] = useState<PresaleAPIResponse | null>(null);
+//   const [countdown, setCountdown] = useState<Countdown>({
+//     days: 0,
+//     hours: 0,
+//     minutes: 0,
+//     seconds: 0,
+//   });
+//   const [progress, setProgress] = useState<number>(0);
+
+//   // User’s input
+//   const [amount, setAmount] = useState<string>(""); // user typed how much USDT or SOL they want to pay
+//   const [selectedCurrency, setSelectedCurrency] = useState<string>("USDT");
+//   const [wusleAmount, setWusleAmount] = useState<number>(0); // how many WUSLE user gets
+
+//   // UI states
+//   const [showLogin, setShowLogin] = useState(false);
+//   const [showReceipt, setShowReceipt] = useState(false);
+//   const [slip, setSlip] = useState<SlipData | null>(null);
+
+//   // Stats about how many WUSLE the current user has purchased
+//   const [userStats, setUserStats] = useState<{ wuslePurchased: number; spent: number } | null>(
+//     null
+//   );
+
+//   // For float math
+//   const epsilon = 1e-8;
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // ENV Vars: connection info, addresses, etc.
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   const SOLANA_RPC =
+//     process.env.NEXT_PUBLIC_SOLANA_RPC ||
+//     "https://mainnet.helius-rpc.com/?api-key=5a6666c8-29bd-4e56-ac5d-bd70076a0412";
+//   const USDT_MINT =
+//     process.env.NEXT_PUBLIC_USDT_MINT || "Es9vMFrzaCERaXwz2xQSKz3F8uQDrE17eCJZzz6nA6qT";
+//   const SOL_RECEIVER =
+//     process.env.NEXT_PUBLIC_SOL_RECEIVER || "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G";
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 1) Fetch user stats (spent, purchased) after they log in
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   async function refreshUserStats() {
+//     try {
+//       const res = await fetch("/api/user");
+//       const data = await res.json();
+//       if (res.ok) {
+//         setUserStats(data);
+//       } else {
+//         toast.error(data.error || "Error fetching user stats");
+//       }
+//     } catch (error) {
+//       console.error("Error fetching user stats:", error);
+//       toast.error("Unable to fetch user stats. The gremlins must be at play!");
+//     }
+//   }
+
+//   useEffect(() => {
+//     if (session?.user) {
+//       refreshUserStats();
+//     }
+//   }, [session]);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 2) Fetch Presale Data from /api/presale
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   useEffect(() => {
+//     async function fetchPresale() {
+//       try {
+//         const res = await fetch("/api/presale");
+//         const data = await res.json();
+//         if (res.ok) {
+//           setPresaleData(data);
+//         } else {
+//           toast.error(data.error || "Failed to load presale data");
+//         }
+//       } catch (err) {
+//         console.error("Error fetching presale data:", err);
+//         toast.error("Error fetching presale data. Check console for details!");
+//       }
+//     }
+
+//     fetchPresale();
+//     // Optional: refresh every 30 sec
+//     // const interval = setInterval(fetchPresale, 30000);
+//     // return () => clearInterval(interval);
+//   }, []);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 3) Compute the progress bar
+//   //    Because targets and raised are in USDT, we can do:
+//   //    progress = totalRaisedSoFar / totalCapInUSDT * 100
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   useEffect(() => {
+//     if (!presaleData) return;
+
+//     // totalCap = sum of all stage targets (in USDT)
+//     const totalCap = presaleData.stages.reduce((acc, s) => acc + s.target, 0);
+
+//     // find the active stage
+//     const { currentStage, stages } = presaleData;
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+
+//     if (!active) {
+//       setProgress(0);
+//       return;
+//     }
+
+//     // sum up all fully completed stages + the active stage’s “raised”
+//     let sumCompleted = 0;
+//     for (const st of stages) {
+//       // if this stageNumber is less than the current stageNumber, consider it fully sold => i.e. st.target in USDT
+//       if (st.stageNumber < currentStage) {
+//         sumCompleted += st.target;
+//       }
+//     }
+//     const totalRaisedSoFar = sumCompleted + active.raised;
+//     const frac = (totalRaisedSoFar / totalCap) * 100;
+
+//     setProgress(Math.min(Math.max(frac, 0), 100));
+//   }, [presaleData]);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 4) Countdown Timer: only show if not sold out
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     if (isPresaleOver) return; // if we already consider it sold out, skip the countdown
+
+//     const endsAtMs = new Date(presaleData.endsAt).getTime();
+//     const timer = setInterval(() => {
+//       const now = Date.now();
+//       const diff = endsAtMs - now;
+//       if (diff <= 0) {
+//         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+//       } else {
+//         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+//         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+//         const m = Math.floor((diff / (1000 * 60)) % 60);
+//         const s = Math.floor((diff / 1000) % 60);
+//         setCountdown({ days: d, hours: h, minutes: m, seconds: s });
+//       }
+//     }, 1000);
+
+//     return () => clearInterval(timer);
+//   }, [presaleData]);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 5) Precisely compute total WUSLE sold so far:
+//   //    For each stage:
+//   //       tokensSold = raised (USDT) / rate (USDT per WUSLE)
+//   //    sum them all
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   function totalWusleSoldAccurate(): number {
+//     if (!presaleData) return 0;
+//     let totalSold = 0;
+
+//     for (const st of presaleData.stages) {
+//       const exactSold = st.raised / st.rate; // => WUSLE sold in that stage
+//       const roundedSold = Number(exactSold.toFixed(8)); // keep ~8 decimals
+//       totalSold += roundedSold;
+//     }
+
+//     return Number(totalSold.toFixed(8));
+//   }
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 6) WUSLE left = totalWusleSupply - totalWusleSold
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   const wusleLeft = useMemo(() => {
+//     if (!presaleData) return 0;
+//     const supply = parseFloat(presaleData.totalWusleSupply); // total tokens
+//     const sold = totalWusleSoldAccurate();
+//     const remaining = supply - sold;
+//     const rounded = Number(remaining.toFixed(8));
+//     return rounded > 0 ? rounded : 0;
+//   }, [presaleData]);
+
+//   // Also, how much USDT that leftover is worth:
+//   const remainingUsdtValue = useMemo(() => {
+//     if (!presaleData) return 0;
+//     return Number((wusleLeft * presaleData.wusleRate));
+//   }, [wusleLeft, presaleData]);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 7) Presale Over? If no WUSLE left => sold out
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   const isPresaleOver = useMemo(() => {
+//     if (!presaleData) return false;
+//     return wusleLeft <= epsilon;
+//   }, [presaleData, wusleLeft]);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 8) Whenever user changes `amount`, recalc how many WUSLE they'd get
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   useEffect(() => {
+//     if (!presaleData) return;
+//     const rate = presaleData.wusleRate;
+//     const paid = parseFloat(amount || "0");
+//     const tokens = paid / rate;
+//     setWusleAmount(isNaN(tokens) ? 0 : tokens);
+//   }, [amount, presaleData]);
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 9) Show total USDT raised so far, for the UI
+//   //    We do something similar to the progress bar logic,
+//   //    but if you want “fully total USDT,” sum all stage.raised
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   function stagesTotalRaisedSoFar(): number {
+//     if (!presaleData) return 0;
+//     const { stages, currentStage } = presaleData;
+//     const active = stages.find((s) => s.stageNumber === currentStage);
+//     if (!active) return 0;
+
+//     let completed = 0;
+//     for (const st of stages) {
+//       if (st.stageNumber < currentStage) {
+//         completed += st.target; // means previous stages fully sold = target USDT
+//       }
+//     }
+//     return completed + active.raised;
+//   }
+
+//   // For the stage marker triangles
+//   function getStageMarkers() {
+//     if (!presaleData) return [];
+//     const { stages, currentStage } = presaleData;
+//     if (!stages.length) return [];
+
+//     const totalCap = stages.reduce((acc, s) => acc + s.target, 0);
+//     let cumulative = 0;
+
+//     return stages.map((s) => {
+//       const pct = (cumulative / totalCap) * 100;
+//       cumulative += s.target;
+
+//       let status: "completed" | "current" | "upcoming" = "upcoming";
+//       if (s.stageNumber < currentStage) {
+//         status = "completed";
+//       } else if (s.stageNumber === currentStage) {
+//         status = "current";
+//       }
+
+//       return { pct, label: `${s.stageNumber}`, status };
+//     });
+//   }
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 10) handleBuyNow: main purchase logic
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   async function handleBuyNow() {
+//     try {
+//       if (!presaleData) {
+//         toast.error("Presale data not loaded yet.");
+//         return;
+//       }
+
+//       if (isPresaleOver) {
+//         toast.error("Presale is sold out. No more WUSLE left to grab!");
+//         return;
+//       }
+
+//       if (!session?.user) {
+//         toast.error("Please log in before buying. We have WUSLE, but we also like security!");
+//         return;
+//       }
+//       if (!publicKey || !connected) {
+//         toast.error("Connect your wallet first. The blockchain awaits!");
+//         return;
+//       }
+
+//       const paid = parseFloat(amount || "0");
+//       if (paid <= 0) {
+//         toast.error("Enter a valid amount. Zero won't buy you any WUSLE!");
+//         return;
+//       }
+
+//       // Double-check how many tokens remain
+//       const totalSupply = parseFloat(presaleData.totalWusleSupply);
+//       const totalSold = totalWusleSoldAccurate();
+//       const actualWusleLeft = totalSupply - totalSold;
+//       if (actualWusleLeft <= epsilon) {
+//         toast.error("WUSLE supply exhausted. Presale is sold out.");
+//         return;
+//       }
+
+//       // The max user can pay to buy the leftover tokens in USDT
+//       const maxPayable = actualWusleLeft * presaleData.wusleRate;
+//       if (paid > maxPayable + epsilon) {
+//         toast.error(
+//           `Only ~${actualWusleLeft.toFixed(4)} WUSLE left (max ${maxPayable} ${selectedCurrency}).`
+//         );
+//         return;
+//       }
+
+//       // Also if user tries to get more tokens than remain
+//       if (wusleAmount > actualWusleLeft + epsilon) {
+//         toast.error(`Only ${actualWusleLeft.toFixed(4)} WUSLE left. Reduce your purchase amount.`);
+//         return;
+//       }
+
+//       // ───── Prepare to send transaction on Solana ─────
+//       const connection = new Connection(SOLANA_RPC, "confirmed");
+//       let txSignature = "";
+
+//       // A) If paying with SOL
+//       if (selectedCurrency === "SOL") {
+//         const lamports = Math.floor(paid * LAMPORTS_PER_SOL);
+//         const receiverPubkey = new PublicKey(SOL_RECEIVER);
+
+//         try {
+//           const transaction = new Transaction().add(
+//             SystemProgram.transfer({
+//               fromPubkey: publicKey,
+//               toPubkey: receiverPubkey,
+//               lamports,
+//             })
+//           );
+//           txSignature = await sendTransaction(transaction, connection);
+//         } catch (err: any) {
+//           if (err?.message?.includes("User rejected the request")) {
+//             toast.error("Transaction cancelled by user.");
+//           } else {
+//             toast.error("Failed to send SOL transaction. Double-check wallet or network.");
+//             console.error("SOL Transaction Error:", err);
+//           }
+//           return;
+//         }
+//       }
+//       // B) If paying with USDT
+//       else {
+//         try {
+//           const usdtMintPubKey = new PublicKey(USDT_MINT);
+//           const recipientPubkey = new PublicKey(SOL_RECEIVER);
+
+//           // sender’s token account
+//           const senderUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, publicKey);
+//           // recipient’s token account
+//           const recipientUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, recipientPubkey);
+
+//           const usdtDecimals = 6;
+//           const amountInSmallestUnits = Math.floor(paid * 10 ** usdtDecimals);
+
+//           const transaction = new Transaction();
+//           const recipientATAInfo = await connection.getAccountInfo(recipientUsdtATA);
+
+//           // Ensure the receiver has a token account for USDT
+//           if (!recipientATAInfo) {
+//             transaction.add(
+//               createAssociatedTokenAccountInstruction(
+//                 publicKey,
+//                 recipientUsdtATA,
+//                 recipientPubkey,
+//                 usdtMintPubKey
+//               )
+//             );
+//           }
+
+//           // Transfer USDT
+//           transaction.add(
+//             createTransferInstruction(
+//               senderUsdtATA,
+//               recipientUsdtATA,
+//               publicKey,
+//               amountInSmallestUnits,
+//               [],
+//               TOKEN_PROGRAM_ID
+//             )
+//           );
+
+//           try {
+//             txSignature = await sendTransaction(transaction, connection);
+//           } catch (err: any) {
+//             if (err?.message?.includes("User rejected the request")) {
+//               toast.error("Transaction cancelled by user.");
+//             } else {
+//               toast.error("Failed to send USDT transaction. Double-check wallet or network.");
+//               console.error("❌ USDT Transaction Error:", err);
+//             }
+//             return;
+//           }
+//         } catch (err: any) {
+//           console.error("❌ USDT Setup Error:", err);
+//           toast.error("Something went wrong preparing the USDT transaction.");
+//           return;
+//         }
+//       }
+
+//       // ─────────────────────────────────────────────────────────────────────────
+//       // Confirm the transaction on-chain
+//       // ─────────────────────────────────────────────────────────────────────────
+//       try {
+//         const latestBlockHash = await connection.getLatestBlockhash();
+//         const confirmationResult = await connection.confirmTransaction({
+//           signature: txSignature,
+//           blockhash: latestBlockHash.blockhash,
+//           lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+//         });
+
+//         if (confirmationResult.value.err) {
+//           toast.error("Transaction not confirmed on-chain. Check your wallet or explorer.");
+//           return;
+//         }
+//       } catch (err: any) {
+//         console.error("Transaction confirmation error:", err);
+//         toast.error("Transaction broadcasted, but confirmation failed. Check explorer.");
+//         return;
+//       }
+
+//       toast.success(`${selectedCurrency} transaction confirmed! Tx: ${txSignature.slice(0, 16)}...`);
+
+//       // ─────────────────────────────────────────────────────────────────────────
+//       // 8) Create server-side slip record, update DB
+//       // ─────────────────────────────────────────────────────────────────────────
+//       try {
+//         const res = await fetch("/api/slip/buy", {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({
+//             walletAddress: publicKey.toBase58(),
+//             currency: selectedCurrency,
+//             amountPaid: paid,
+//             wuslePurchased: wusleAmount,
+//             txSignature,
+//           }),
+//         });
+//         const data = await res.json();
+
+//         if (res.ok) {
+//           setSlip(data.slip);
+//           setShowReceipt(true);
+
+//           // re-fetch user stats
+//           refreshUserStats();
+//         } else {
+//           toast.error(data.error || "Error creating slip on the server. Our apologies!");
+//         }
+//       } catch (serverErr: any) {
+//         console.error("Slip creation error:", serverErr);
+//         toast.error("Purchase succeeded, but slip creation failed on server.");
+//       }
+//     } catch (outerErr: any) {
+//       console.error("handleBuyNow outer error:", outerErr);
+//       toast.error("Uh oh, something unexpected happened. See console for details.");
+//     }
+//   }
+
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   // 11) Render: the UI
+//   // ─────────────────────────────────────────────────────────────────────────────
+//   return (
+//     <div className="flex items-center justify-center min-h-screen p-4">
+//       <div className="relative w-full py-4 max-w-[600px] mx-auto bg-gradient-to-br from-purple-900 to-purple-500 rounded-lg transition-all duration-300">
+//         {/* Title / Stage Info */}
+//         <div className="text-center mt-2">
+//           <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//             $WUSLE PRESALE
+//           </h2>
+//           {presaleData && (
+//             <>
+//               <h2 className="font-bold text-lg sm:text-xl uppercase text-white">
+//                 IS NOW LIVE!
+//               </h2>
+//               <h3 className="font-bold text-md sm:text-xl mt-1 text-white">
+//                 STAGE {presaleData.currentStage}/{presaleData.stages.length}
+//               </h3>
+//               <p className="text-xs sm:text-lg mt-4 text-gray-200">
+//                 Liquidity At Launch: {presaleData.liquidityAtLaunch} USDT
+//               </p>
+//             </>
+//           )}
+//         </div>
+
+//         {/* Countdown */}
+//         {presaleData && !isPresaleOver ? (
+//           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-black mx-4 md:mx-8">
+//             {["days", "hours", "minutes", "seconds"].map((unit) => (
+//               <div key={unit} className="flex flex-col items-center">
+//                 <div className="bg-white/40 text-white rounded-lg hover:bg-white/20 transition flex flex-col items-center justify-center w-[70px] h-[60px] sm:w-[90px] sm:h-[70px] md:w-[100px] md:h-[80px] lg:w-[120px] lg:h-[100px]">
+//                   <span className="font-bold text-xl sm:text-2xl md:text-3xl">
+//                     {countdown[unit as keyof Countdown]}
+//                   </span>
+//                   <span className="text-white text-sm sm:text-base uppercase mt-2">
+//                     {unit === "days"
+//                       ? "Days"
+//                       : unit === "hours"
+//                       ? "Hrs"
+//                       : unit === "minutes"
+//                       ? "Mins"
+//                       : "Secs"}
+//                   </span>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         ) : presaleData && isPresaleOver ? (
+//           <p className="text-center text-white mt-2 font-bold text-lg">
+//             🎉 Presale Sold Out
+//           </p>
+//         ) : (
+//           <p className="text-center text-white mt-2">
+//             Loading Presale Data...
+//           </p>
+//         )}
+
+//         {/* Progress & Stage Markers */}
+//         <div className="mt-4 px-2 sm:px-8">
+//           <div className="relative px-2">
+//             <div className="relative w-full h-8 mb-0">
+//               {presaleData &&
+//                 getStageMarkers().map((marker, idx) => {
+//                   let arrowColor, textColor;
+//                   if (marker.status === "completed") {
+//                     arrowColor = "border-t-green-500";
+//                     textColor = "text-green-500";
+//                   } else if (marker.status === "current") {
+//                     arrowColor = "border-t-yellow-500";
+//                     textColor = "text-yellow-500";
+//                   } else {
+//                     arrowColor = "border-t-white";
+//                     textColor = "text-white";
+//                   }
+//                   return (
+//                     <div
+//                       key={idx}
+//                       className="absolute flex flex-col items-center"
+//                       style={{ left: `calc(${marker.pct}% - 8px)` }}
+//                     >
+//                       <span className={`text-xs font-bold mb-1 ${textColor}`}>
+//                         {marker.label}
+//                       </span>
+//                       <div
+//                         className={`${
+//                           isMobile6 ? "w-2 h-1" : "w-3 h-1"
+//                         } border-l-4 border-r-4 border-l-transparent border-r-transparent border-t-8 ${arrowColor}`}
+//                       />
+//                     </div>
+//                   );
+//                 })}
+//             </div>
+//             <div
+//               className={`w-full bg-white/20 rounded-full overflow-hidden ${
+//                 isMobile6 ? "h-5" : "h-4"
+//               }`}
+//             >
+//               <div
+//                 className="h-full bg-purple-200 rounded-full transition-all duration-300"
+//                 style={{ width: `${progress}%` }}
+//               />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* WUSLE Left (not sold out) */}
+//         {presaleData && !isPresaleOver && (
+//           <div className="text-center mt-2 text-white text-sm sm:text-base">
+//             <p>
+//               Only <span className="font-bold">{wusleLeft.toFixed(4)} WUSLE</span> left (~
+//               <span className="font-bold"> {remainingUsdtValue} USDT</span>)
+//             </p>
+//           </div>
+//         )}
+
+//         {/* WUSLE Sold / USDT Raised */}
+//         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-sm sm:text-lg md:text-md lg:text-lg">
+//               WUSLE SOLD
+//             </span>
+//             <span className="text-white text-xs sm:text-base md:text-md lg:text-lg">
+//               {/* totalWusleSoldAccurate for tokens sold */}
+//               {presaleData
+//                 ? totalWusleSoldAccurate().toLocaleString(undefined, { maximumFractionDigits: 4 })
+//                 : 0}{" "}
+//               / {presaleData ? presaleData.totalWusleSupply : 0}
+//             </span>
+//           </div>
+//           <div className="flex justify-between items-center">
+//             <span className="text-white text-xs sm:text-sm md:text-sm">USDT RAISED</span>
+//             <span className="text-white text-xs sm:text-sm md:text-sm lg:text-lg">
+//               $
+//               {presaleData
+//                 ? stagesTotalRaisedSoFar().toLocaleString(undefined, {
+//                     maximumFractionDigits: 2,
+//                   })
+//                 : "0"}
+//             </span>
+//           </div>
+//         </div>
+
+//         {/* Rate Info */}
+//         {presaleData && (
+//           <div className="mt-3 sm:mt-4 mx-4 sm:mx-8 py-2 sm:py-4 px-3 sm:px-4 text-center transition bg-white/15 rounded-lg">
+//             <p className="text-white mb-1 text-sm sm:text-lg md:text-xl lg:text-2xl">
+//               1 WUSLE = {presaleData.wusleRate.toFixed(4)} USDT
+//             </p>
+//             <p className="text-white text-xs sm:text-sm md:text-base lg:text-lg">
+//               LISTING PRICE: {presaleData.listingPrice.toFixed(3)} USDT
+//             </p>
+//           </div>
+//         )}
+
+//         {/* Your Purchased WUSLE */}
+//         {session?.user && (
+//           <div className="flex font-bold justify-between items-center mt-3 px-3 text-sm mx-4 sm:mx-14">
+//             <span className="text-white uppercase text-xs sm:text-md md:text-lg lg:text-xl">
+//               YOUR PURCHASED WUSLE
+//             </span>
+//             <span className="font-bold text-white text-xs sm:text-md md:text-lg lg:text-xl">
+//               {(userStats?.wuslePurchased ?? 0).toFixed(5)}
+//             </span>
+//           </div>
+//         )}
+
+//         {/* Currency Selection */}
+//         <div className="mt-4 flex mx-4 sm:mx-8 items-center justify-between gap-2">
+//           <Button
+//             onClick={() => setSelectedCurrency("USDT")}
+//             variant={selectedCurrency === "USDT" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/2 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "USDT" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Usdt} alt="USDT" width={24} height={24} />
+//             <span>USDT</span>
+//           </Button>
+
+//           <Button
+//             onClick={() => setSelectedCurrency("SOL")}
+//             variant={selectedCurrency === "SOL" ? "default" : "outline"}
+//             className={`flex items-center justify-center space-x-2 py-3 sm:py-5 rounded-lg w-1/2 bg-white/20 text-black hover:bg-white/30 transition-colors duration-200 text-sm sm:text-sm md:text-md lg:text-lg ${
+//               selectedCurrency === "SOL" ? "border-2 border-black" : "border-none"
+//             }`}
+//           >
+//             <Image src={Sol} alt="Sol" width={24} height={24} />
+//             <span>SOL</span>
+//           </Button>
+//         </div>
+
+//         {/* Payment Row */}
+//         <div className="mt-4 mx-4 sm:mx-12 flex justify-between gap-4 px-4 sm:px-8">
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 placeholder="YOU PAY"
+//                 value={amount}
+//                 onChange={(e) => setAmount(e.target.value)}
+//                 className="bg-white/20 text-white placeholder:text-white/90 placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-2 top-1/2 transform -translate-y-1/2">
+//                 <Image
+//                   src={selectedCurrency === "USDT" ? Usdt : Sol}
+//                   alt={selectedCurrency}
+//                   width={24}
+//                   height={24}
+//                 />
+//               </span>
+//             </div>
+//           </div>
+//           <div className="flex flex-col w-1/2">
+//             <div className="relative w-full">
+//               <Input
+//                 type="number"
+//                 value={wusleAmount.toFixed(4)}
+//                 disabled
+//                 placeholder="YOU GET"
+//                 className="bg-white/20 text-white placeholder:pr-10 py-2 sm:py-5 rounded-lgl w-full text-sm sm:text-sm md:text-md placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-lg"
+//               />
+//               <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
+//                 <Image
+//                   src={Wusle}
+//                   alt="WUSLE"
+//                   width={32}
+//                   height={32}
+//                   className="rounded-full border bg-white border-purple-700 p-1"
+//                 />
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Connect Wallet / Buy Section */}
+//         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-7 pb-2">
+//           {/* If user not logged in, show our "CONNECT YOUR WALLET" button => Actually it's a login */}
+//           {!session?.user ? (
+//             <Button
+//               onClick={() => setShowLogin(true)}
+//               className="w-1/2 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-sm sm:text-lg md:text-md lg:text-lg"
+//             >
+//               CONNECT YOUR WALLET
+//             </Button>
+//           ) : (
+//             <WalletMultiButton
+//               style={{
+//                 width: "100%",
+//                 maxWidth: "600px",
+//                 padding: "16px",
+//                 color: "black",
+//                 fontWeight: "bold",
+//                 background: "#fce2ff",
+//                 borderRadius: "10px",
+//                 border: "none",
+//                 cursor: "pointer",
+//                 transition: "all 0.3s ease-in-out",
+//                 fontSize: "clamp(14px, 2vw, 16px)",
+//                 textAlign: "center",
+//                 justifyContent: "center",
+//                 alignItems: "center",
+//                 display: "flex",
+//               }}
+//             >
+//               {connected ? "CONNECTED" : "CONNECT WALLET"}
+//             </WalletMultiButton>
+//           )}
+
+//           {session?.user && publicKey && connected && (
+//             <Button
+//               onClick={handleBuyNow}
+//               disabled={isPresaleOver || parseFloat(amount || "0") <= 0}
+//               className="w-1/3 px-8 py-6 text-black font-bold bg-pink-100 hover:bg-white/80 rounded-lg text-sm sm:text-base md:text-lg"
+//             >
+//               {isPresaleOver ? "SOLD OUT" : "BUY NOW"}
+//             </Button>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* Login Modal */}
+//       <LoginModal show={showLogin} onClose={() => setShowLogin(false)} />
+
+//       {/* Receipt Modal */}
+//       <ReceiptModal show={showReceipt} slip={slip} onClose={() => setShowReceipt(false)} />
+//     </div>
+//   );
+// }
 
 
 

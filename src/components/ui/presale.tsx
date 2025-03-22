@@ -105,11 +105,11 @@ export default function PresaleInterface() {
   // Env
   const SOLANA_RPC =
     process.env.NEXT_PUBLIC_SOLANA_RPC ||
-    "https://mainnet.helius-rpc.com/?api-key=5a6666c8-29bd-4e56-ac5d-bd70076a0412";
+    "";
   const USDT_MINT =
-    process.env.NEXT_PUBLIC_USDT_MINT || "Es9vMFrzaCERaXwz2xQSKz3F8uQDrE17eCJZzz6nA6qT";
+    process.env.NEXT_PUBLIC_USDT_MINT || "";
   const SOL_RECEIVER =
-    process.env.NEXT_PUBLIC_SOL_RECEIVER || "Fc71HwgDJTAfMMd1f7zxZq1feBM67A3pZQQwoFbLWx6G";
+    process.env.NEXT_PUBLIC_SOL_RECEIVER || "";
 
   // ──────────────────────────────────────────────────────────────────────────
   // 1) Fetch user stats

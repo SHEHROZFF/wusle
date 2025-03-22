@@ -376,7 +376,7 @@ export default function PresaleInterface() {
           const senderUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, publicKey);
           const recipientUsdtATA = await getAssociatedTokenAddress(usdtMintPubKey, recipientPubkey);
 
-          const usdtDecimals = 6;
+          const usdtDecimals = 9;
           const amtInSmallestUnits = Math.floor(paid * 10 ** usdtDecimals);
 
           const transaction = new Transaction();

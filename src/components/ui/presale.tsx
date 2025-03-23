@@ -745,7 +745,7 @@ export default function PresaleInterface() {
           {!session?.user ? (
             <Button
               onClick={() => setShowLogin(true)}
-              className="w-1/2 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-[12px] sm:text-sm md:text-md lg:text-lg"
+              className="w-2/3 py-5 text-black font-bold bg-pink-100 hover:bg-purple-900 rounded-lg text-[12px] sm:text-sm md:text-md lg:text-lg"
             >
               CONNECT YOUR WALLET
             </Button>

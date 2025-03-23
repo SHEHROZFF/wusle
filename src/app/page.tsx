@@ -41,7 +41,9 @@ export default function Page() {
         <HeartSteps />
         <Marquee />
         <AboutPage />
-        <Tokenomics />
+        <div id="tokenomics">
+          <Tokenomics />
+        </div>
         <Marquee />
         <Roadmap />
         <Faq />

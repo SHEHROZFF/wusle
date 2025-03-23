@@ -242,6 +242,15 @@ const Footer: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
     const { connected } = useWallet();
 
+
+  function handleFooterScroll(e: React.MouseEvent, id: string) {
+    e.preventDefault();
+    const element = document.querySelector(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+    
   return (
     <footer className="relative overflow-hidden text-white p-8 flex flex-col items-center text-center bg-black/80">
       {/* Footer Links */}
@@ -258,29 +267,29 @@ const Footer: React.FC = () => {
               {title === "ABOUT" && (
                 <>
                   <li>
-                    <a href="#" className="hover:text-white">
+                    <a href="#tokenomics" onClick={(e) => handleFooterScroll(e, "#tokenomics")} className="hover:text-white">
                       Tokenomics
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-white">
+                    <a href="#about" onClick={(e) => handleFooterScroll(e, "#about")} className="hover:text-white">
                       How to Buy
                     </a>
                   </li>
+
                 </>
               )}
               {title === "DOCS" && (
                 <>
-                  {/* <li>
-                    <a href="#" className="hover:text-white">
+                  <li>
+                    <a href="/whitepaper.pdf" className="hover:text-white">
                       Whitepaper
                     </a>
-                  </li> */}
+                  </li>
                   <li>
                     <a
                       href="/Wusle_Audit.pdf"
                       className="hover:text-white"
-                      download
                     >
                       Audit
                     </a>
@@ -290,7 +299,7 @@ const Footer: React.FC = () => {
               {title === "TERMS" && (
                 <>
                   <li>
-                    <a href="#" className="hover:text-white">
+                    <a href="/Wusle_Cookies.pdf" className="hover:text-white">
                       Cookies Policy
                     </a>
                   </li>
@@ -298,7 +307,6 @@ const Footer: React.FC = () => {
                     <a
                       href="/Wusle_privacy_policy.pdf"
                       className="hover:text-white"
-                      download={true}
                     >
                       Privacy Policy
                     </a>
@@ -307,7 +315,6 @@ const Footer: React.FC = () => {
                     <a
                       href="/Wusle_Terms_and_Condition.pdf"
                       className="hover:text-white"
-                      download={true}
                     >
                       Terms of Use
                     </a>
@@ -350,7 +357,7 @@ const Footer: React.FC = () => {
           be subject to capital gains or other taxes applicable in your
           jurisdiction.
         </p>
-        <p className="mt-2 mb-3">© 2024 WUSLE. All Rights Reserved.</p>
+        <p className="mt-2 mb-3">© {new Date().getFullYear()} WUSLE. All Rights Reserved.</p>
 
         {session?.user ? (
           // Logged-in user => show Connect Wallet

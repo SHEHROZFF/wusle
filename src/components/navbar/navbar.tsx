@@ -104,22 +104,23 @@ const Navbar: React.FC = () => {
           {/* Left Side: Social Media Icons */}
           <div className="flex">
             <a
-              href="https://x.com/wusle_official?s=21"
+              href="https://www.instagram.com/wusle_official/#"
               target="_blank"
               rel="noopener noreferrer"
-              className={`border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full items-center justify-center hover:text-black transition ${isWide ? "w-12 h-12" : "w-8 h-8"}`}
+              className={`border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full items-center justify-center hover:text-black transition ${isWide ? "w-12 h-12" : "w-9 h-9"}`}
+
             >
-              <FaXTwitter className="text-[#9c23d5] text-2xl" />
+              <FaInstagram className="text-[#9c23d5] text-2xl" />
             </a>
 
             {isWide && (
                 <a
-                href="https://www.instagram.com/wusle_official/#"
+                href="https://x.com/wusle_official?s=21"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition ml-2"
+              className="border-2 flex border-[#9c23d5] bg-[#fce2ff] rounded-full w-12 h-12 items-center justify-center hover:text-black transition ml-2"
               >
-                <FaInstagram className="text-[#9c23d5] text-2xl" />
+                <FaXTwitter className="text-[#9c23d5] text-2xl" />
               </a>
             )}
 

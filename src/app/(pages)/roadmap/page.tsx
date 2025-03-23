@@ -172,7 +172,7 @@ Community Engagement: Launching wusle.social, a platform for community-driven gr
 Expanding the $WUSLE Story: Debut of a 2D animated short series, introducing $WUSLE’s vision and impact.
 DEX Listings Launch: Listings on Raydium, DEXTools, CoinMarketCap, and CoinGecko.`,
     quarter: "May 2025",
-    image: Watch1,
+    image: Watch2,
   },
   {
     title: "Entering the Global Stage",
@@ -181,7 +181,7 @@ Tier 1 CEX Listing #2: Second high-profile exchange listing, expanding investor 
 Community Contest #2: Rewarding top contributors and most active users with exclusive $WUSLE incentives.
 Marketing Expansion: Large-scale digital campaigns, influencer collaborations, and strategic partnerships to drive global awareness.`,
     quarter: "Q2 2025",
-    image: Watch2,
+    image: Watch1,
   },
   {
     title: "Real-World Use Cases & Blockchain Growth",

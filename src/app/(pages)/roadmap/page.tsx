@@ -153,9 +153,9 @@ import { useInView } from "react-intersection-observer";
 import Image, { StaticImageData } from "next/image";
 import RoadmapImage from "../../../assets/Images/DALL·E 2025-02-05 08.37.35 - A peaceful and ethereal landscape scene featuring small purple and pink flowers placed in the corner of the image. A soft glowing heartbeat pulse is s.webp";
 import Watch1 from "../../../assets/Images/watch1.png";
-import Watch2 from "../../../assets/Images/watch3.png";
-import Watch3 from "../../../assets/Images/watch1.png";
-import Watch4 from "../../../assets/Images/watch4.png";
+import Watch2 from "../../../assets/Images/watch2.png";
+import Watch3 from "../../../assets/Images/watch3.png";
+import Watch5 from "../../../assets/Images/watch5.png";
 
 interface Phase {
   title: string;
@@ -197,7 +197,7 @@ Binance Listing: Application for Binance listing, targeting one of the largest e
 Exclusive Merchandise: Introducing fitness gear, wearables, and collectibles to boost brand loyalty.
 Real-World Partnerships: Collaborating with global fitness chains, wellness influencers, and health organizations for wider adoption.`,
     quarter: "Q4 2025",
-    image: Watch4,
+    image: Watch5,
   },
   {
     title: "Expansion & Future Innovations",

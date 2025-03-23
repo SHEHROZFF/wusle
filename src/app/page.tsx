@@ -44,7 +44,7 @@ export default function Page() {
         <div id="tokenomics">
           <Tokenomics />
         </div>
-        <Marquee />
+        {/* <Marquee /> */}
         <div id="roadmap">
           <Roadmap />
         </div>

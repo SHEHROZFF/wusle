@@ -493,7 +493,7 @@ export default function PresaleInterface() {
     <div className="flex items-center justify-center min-h-screen p-4">
       {/* Slip generating overlay */}
       {isSlipGenerating && (
-        <div className="fixed top-0 left-0 w-screen h-screen bg-black/60 z-[99999999999] flex items-center justify-center">
+        <div className="absolute top-0  w-screen h-screen z-[99999999999] flex items-center justify-center">
           <div className="bg-white text-black font-bold px-6 py-4 rounded-md shadow-md">
             <p className="text-lg">Generating your slip...</p>
             <p className="text-sm mt-1">

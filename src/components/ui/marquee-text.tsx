@@ -171,7 +171,7 @@ export default function Marquee() {
       </div>
 
       {/* Fixed (Static) Second Marquee Layer */}
-      <div className="flex flex-nowrap gap-6 sm:gap-8 whitespace-nowrap bg-purple-600 py-8 px-6 sm:px-10 -skew-y-3">
+      {/* <div className="flex flex-nowrap gap-6 sm:gap-8 whitespace-nowrap bg-purple-600 py-8 px-6 sm:px-10 -skew-y-3">
         {Array.from({ length: 3 }).flatMap(() =>
           images.map((image, index) => (
             <motion.div
@@ -198,7 +198,7 @@ export default function Marquee() {
             </motion.div>
           ))
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

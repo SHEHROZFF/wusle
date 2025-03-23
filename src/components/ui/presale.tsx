@@ -603,14 +603,14 @@ export default function PresaleInterface() {
         </div>
 
         {/* WUSLE Left */}
-        {presaleData && !isPresaleOver && (
+        {/* {presaleData && !isPresaleOver && (
           <div className="text-center mt-2 text-white text-sm sm:text-base">
             <p>
               Only <span className="font-bold">{wusleLeft.toFixed(4)} WUSLE</span> left (~
               <span className="font-bold"> {remainingUsdtValue.toFixed(4)} USDT</span>)
             </p>
           </div>
-        )}
+        )} */}
 
         {/* WUSLE Sold / USDT Raised */}
         <div className="flex flex-col gap-1 text-xs sm:text-sm text-purple-200 mt-2 px-4 sm:px-8">

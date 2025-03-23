@@ -21,7 +21,7 @@ import { FaBars, FaSignInAlt } from "react-icons/fa";
 import { useIsWide } from "@/hooks/useIsWide";
 
 const links = [
-  { href: "#home", label: "Home" },
+  { href: "#roadmap", label: "Roadmap" },
   { href: "#about", label: "About" },
   { href: "/whitepaper.pdf", label: "Whitepaper" },
   { href: "/Wusle_Audit.pdf", label: "Audit" },

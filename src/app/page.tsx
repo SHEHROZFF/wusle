@@ -45,7 +45,9 @@ export default function Page() {
           <Tokenomics />
         </div>
         <Marquee />
-        <Roadmap />
+        <div id="roadmap">
+          <Roadmap />
+        </div>
         <Faq />
         <Footer />
       </div>

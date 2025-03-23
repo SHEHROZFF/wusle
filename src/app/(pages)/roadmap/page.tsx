@@ -153,7 +153,7 @@ import { useInView } from "react-intersection-observer";
 import Image, { StaticImageData } from "next/image";
 import RoadmapImage from "../../../assets/Images/DALL·E 2025-02-05 08.37.35 - A peaceful and ethereal landscape scene featuring small purple and pink flowers placed in the corner of the image. A soft glowing heartbeat pulse is s.webp";
 import Watch1 from "../../../assets/Images/watch1.png";
-import Watch2 from "../../../assets/Images/watch2.png";
+import Watch2 from "../../../assets/Images/watch21.png";
 import Watch3 from "../../../assets/Images/watch3.png";
 import Watch5 from "../../../assets/Images/watch5.png";
 

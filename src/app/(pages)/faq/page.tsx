@@ -226,17 +226,22 @@ const faqs: FAQ[] = [
   {
     question: "What is WUSLE?",
     answer:
-      "WUSLE is a revolutionary platform designed to bring innovation to the cryptocurrency space.",
+      "Wusle is a platform that seamlessly integrates health and technology, rewarding users with Wusle coins—a digital currency earned by improving heart health. With the wusle braccelet, every step, every workout, and every healthy choice earns you Wusle Coins, bringing fitness and finance together like never before.",
   },
   {
-    question: "How do I buy Coins?",
+    question: "Why Wusle?",
     answer:
-      "You can buy coins through our platform using supported cryptocurrencies or fiat methods.",
+      "$WUSLE combines wearable technology, blockchain, and Al-driven analytics to reward users for staying active. With real-time tracking, secure smart contracts, and personalized insights, it transforms fitness into financial opportunity.",
   },
   {
-    question: "Is my data secure?",
+    question: "HOW DO I GET Wusle?",
     answer:
-      "Yes, we use state-of-the-art encryption to ensure your data and transactions are secure.",
+      "You can only buy $Wusle on the official Wusle website. After the presale you will be able to claim and trade your purchased coins. Important: You can currently only buy $Wusle on wusle.com. All other providers are scam. Never send money directly to the contract address, always buy via the presale panel on the website.",
+  },
+  {
+    question: "WHO DO I CONTACT?",
+    answer:
+      "If you have any questions, you can contact the Wusle social media at any time, which we recommend so that you are always up to date. If you have any direct questions or would like to work with us, please send us an email at: contact@wusle.com.",
   },
 ];
 
@@ -248,7 +253,7 @@ const FAQSection: React.FC = () => {
   };
 
   return (
-    <section className="relative h-[150vh] text-white p-8 flex flex-col items-center text-center">
+    <section className="relative h-[180vh] text-white p-8 flex flex-col items-center text-center ">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
@@ -261,7 +266,7 @@ const FAQSection: React.FC = () => {
 
       {/* FAQ Content Card with Glass Effect */}
       <motion.div
-        className="relative z-10 bg-white bg-opacity-20 backdrop-blur-sm mt-[30rem] text-gray-900 max-w-4xl mx-auto flex flex-col justify-center p-8 rounded-3xl shadow-xl border border-gray-300"
+        className="relative  bg-white bg-opacity-20 backdrop-blur-sm mt-[30rem] text-gray-900 max-w-4xl mx-auto flex flex-col justify-center p-8 rounded-3xl shadow-xl border border-gray-300"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}

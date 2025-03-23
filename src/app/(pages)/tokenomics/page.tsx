@@ -120,15 +120,15 @@
 //               className="rounded-3xl z-20 translate-y-[-7%] mx-auto"
 //             />
 //           </div>
-//             <motion.p
-//             className={`ultra max-w-xl mx-auto mb-10 transition-all duration-700 ${isMobile ? "text-sm" : "md:text-2xl"}`}
-//             initial={{ opacity: 0, y: 50 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ duration: 1.2, delay: 0.7, ease: "easeOut" }}
-//           >
-//             " Redefining Tokenomics with a visionary approach—where art meets technology in a symphony
-//             of innovation and creativity. Prepare to have your mind blown and your expectations shattered. "
-//           </motion.p>
+          //   <motion.p
+          //   className={`ultra max-w-xl mx-auto mb-10 transition-all duration-700 ${isMobile ? "text-sm" : "md:text-2xl"}`}
+          //   initial={{ opacity: 0, y: 50 }}
+          //   animate={{ opacity: 1, y: 0 }}
+          //   transition={{ duration: 1.2, delay: 0.7, ease: "easeOut" }}
+          // >
+          //   " Redefining Tokenomics with a visionary approach—where art meets technology in a symphony
+          //   of innovation and creativity. Prepare to have your mind blown and your expectations shattered. "
+          // </motion.p>
 //         </motion.div>
 
 
@@ -145,10 +145,14 @@ import Image from "next/image";
 import "animate.css";
 import TokenomicsImage from "../../../assets/Images/Group 1 (1).png";
 import BgTokenicsImage from "../../../assets/Images/DALL·E 2025-02-05 17.43.03 - A seamless website background in landscape orientation with a soft purple and pink gradient. The design features delicate heartbeats, flowers, leaves,.webp";
+ import {motion, useAnimation} from "framer-motion";
+ import { useIsMobile } from "@/hooks/useIsMobile";
+
 
 export default function Page() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -213,6 +217,15 @@ export default function Page() {
           />
         </div>
       </div>
+      <motion.p
+            className={`max-w-xl mx-auto mb-10 transition-all duration-700 ${isMobile ? "text-sm" : "md:text-xl"} text-white animate__animated animate__fadeInUp animate__delay-1s text-center mt-10`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.7, ease: "easeOut" }}
+          >
+            " Redefining Tokenomics with a visionary approach—where art meets technology in a symphony
+            of innovation and creativity. Prepare to have your mind blown and your expectations shattered. "
+          </motion.p>
     </div>
   );
 }

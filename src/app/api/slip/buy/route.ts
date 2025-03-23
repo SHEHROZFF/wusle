@@ -64,7 +64,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const totalTokens = await allocatePurchaseAcrossStages(amountPaid);
+    // Conversion rate: 1 USDT = 0.0075 SOL => 1 SOL = (1 / 0.0075) ≈ 133.333 USDT
+      const SOL_TO_USDT_RATE = 1 / 0.0075; // ≈ 133.333...
+
+      let usdtEquivalent = amountPaid;
+      if (currency === "SOL") {
+        usdtEquivalent = amountPaid * SOL_TO_USDT_RATE;
+      }
+
+    const totalTokens = await allocatePurchaseAcrossStages(usdtEquivalent);
+
+    // const totalTokens = await allocatePurchaseAcrossStages(amountPaid);
     const actualWuslePurchased = totalTokens;
 
     await prisma.user.update({
@@ -93,7 +103,7 @@ export async function POST(req: NextRequest) {
     /* ───────────────────────────────
         Fire-and-forget email to Admin
     ───────────────────────────────── */
-    const adminEmail = process.env.ADMIN_EMAIL || "bilal.shehroz420@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "";
 
     const htmlContent = `
       <h2>📢 New WUSLE Token Purchase</h2>

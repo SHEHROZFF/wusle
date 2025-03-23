@@ -574,7 +574,7 @@ export default function PresaleInterface() {
                   return (
                     <div
                       key={idx}
-                      className="absolute flex flex-col items-center"
+                      className="absolute flex flex-col items-center ml-2"
                       style={{ left: `calc(${marker.pct}% - 8px)` }}
                     >
                       <span className={`text-xs font-bold mb-1 ${textColor}`}>

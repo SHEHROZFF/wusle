@@ -90,7 +90,7 @@ export async function GET() {
     const { allStages, currentStage } = await syncPresaleStages();
 
     // Some environment vars or DB config
-    const totalWusleSupply = process.env.TOTAL_WUSLE_SUPPLY || "30000000.00";
+    const totalWusleSupply = process.env.TOTAL_WUSLE_SUPPLY || "30000000";
     const liquidityAtLaunch = process.env.LIQUIDITY_AT_LAUNCH || "5,000,000";
 
     const endsAt = currentStage.endTime.toISOString();

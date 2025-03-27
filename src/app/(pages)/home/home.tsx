@@ -423,7 +423,7 @@ export default function Home() {
         </div>
       ) : (
         <div
-          className="absolute w-full max-w-3xl top-[25%] left-1/2 transform -translate-x-1/2  px-4"
+          className="absolute w-full max-w-3xl top-[20%] left-1/2 transform -translate-x-1/2  px-4"
         >
           <PresaleInterface />
         </div>

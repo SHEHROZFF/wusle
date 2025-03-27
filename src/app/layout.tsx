@@ -35,8 +35,8 @@ export default function RootLayout({
     <meta name="description" content="A trusted and secure Solana-based health coin." />
 
     {/* ✅ Favicon */}
-    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/wusle.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/wusle.png" />
 
     {/* ✅ OpenGraph Metadata */}
     <meta property="og:title" content="Wusle - A Solana Based Health Coin" />

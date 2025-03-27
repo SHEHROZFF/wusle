@@ -35,7 +35,7 @@ export default function Page() {
           </div>
         )} */}
       </div>
-      <div id="about" className={`overflow-x-hidden ${isMobile ? "mt-40" : "mt-60"}`}
+      <div id="about" className={`overflow-x-hidden ${isMobile ? "mt-40" : "mt-80"}`}
         >
         <Marquee />
         <HeartSteps />

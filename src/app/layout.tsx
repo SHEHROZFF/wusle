@@ -25,7 +25,33 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+    {/* ✅ Self-closing meta tags */}
+    <meta charSet="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {/* ✅ Title & Description */}
+    <title>Wusle - A Solana Based Health Coin</title>
+    <meta name="description" content="A trusted and secure Solana-based health coin." />
+
+    {/* ✅ Favicon */}
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+
+    {/* ✅ OpenGraph Metadata */}
+    <meta property="og:title" content="Wusle - A Solana Based Health Coin" />
+    <meta property="og:description" content="A trusted and secure Solana-based health coin." />
+    <meta property="og:image" content="https://yourdomain.com/wusle.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:url" content="https://yourdomain.com" />
+    <meta property="og:site_name" content="Wusle" />
+
+    {/* ✅ Security Headers */}
+    <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+</head>
+
       <body>
         <AuthProvider>
         <ThemeProvider
